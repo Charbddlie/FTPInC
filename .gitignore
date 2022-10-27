@@ -1,3 +1,7 @@
+#vs
+.vs
+client/Debug
+server/Debug
 # Prerequisites
 *.d
 

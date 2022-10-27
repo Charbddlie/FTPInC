@@ -1,0 +1,41 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32802.440
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FTPclient", "FTPclient.vcxproj", "{FEFFC90E-1397-4B77-B1D0-0E260C36FC71}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FTPserver", "..\server\FTPserver.vcxproj", "{9F519FAD-5548-41DB-8968-62DD6DCF29EF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FEFFC90E-1397-4B77-B1D0-0E260C36FC71}.Debug|x64.ActiveCfg = Debug|x64
+		{FEFFC90E-1397-4B77-B1D0-0E260C36FC71}.Debug|x64.Build.0 = Debug|x64
+		{FEFFC90E-1397-4B77-B1D0-0E260C36FC71}.Debug|x86.ActiveCfg = Debug|Win32
+		{FEFFC90E-1397-4B77-B1D0-0E260C36FC71}.Debug|x86.Build.0 = Debug|Win32
+		{FEFFC90E-1397-4B77-B1D0-0E260C36FC71}.Release|x64.ActiveCfg = Release|x64
+		{FEFFC90E-1397-4B77-B1D0-0E260C36FC71}.Release|x64.Build.0 = Release|x64
+		{FEFFC90E-1397-4B77-B1D0-0E260C36FC71}.Release|x86.ActiveCfg = Release|Win32
+		{FEFFC90E-1397-4B77-B1D0-0E260C36FC71}.Release|x86.Build.0 = Release|Win32
+		{9F519FAD-5548-41DB-8968-62DD6DCF29EF}.Debug|x64.ActiveCfg = Debug|x64
+		{9F519FAD-5548-41DB-8968-62DD6DCF29EF}.Debug|x64.Build.0 = Debug|x64
+		{9F519FAD-5548-41DB-8968-62DD6DCF29EF}.Debug|x86.ActiveCfg = Debug|Win32
+		{9F519FAD-5548-41DB-8968-62DD6DCF29EF}.Debug|x86.Build.0 = Debug|Win32
+		{9F519FAD-5548-41DB-8968-62DD6DCF29EF}.Release|x64.ActiveCfg = Release|x64
+		{9F519FAD-5548-41DB-8968-62DD6DCF29EF}.Release|x64.Build.0 = Release|x64
+		{9F519FAD-5548-41DB-8968-62DD6DCF29EF}.Release|x86.ActiveCfg = Release|Win32
+		{9F519FAD-5548-41DB-8968-62DD6DCF29EF}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CD7D2C41-D14E-42A4-B350-FD01A92DD661}
+	EndGlobalSection
+EndGlobal
