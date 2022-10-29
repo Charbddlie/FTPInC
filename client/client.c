@@ -6,6 +6,9 @@ char g_fileName[256];     // 保存服务器发送过来的文件名
 char* g_fileBuf;          // 接受存储文件内容
 char g_recvBuf[1024];     // 接受消息缓冲区
 int g_fileSize;           // 文件总大小
+char accountName[25];
+char accountPassword[25];
+char accountPasswordCheck[25];
 
 int main(void)
 {
@@ -60,7 +63,7 @@ void connectToHost()
 	struct sockaddr_in serAddr;
 	serAddr.sin_family = AF_INET;
 	serAddr.sin_port = htons(SPORT);                       // htons把本地字节序转为网络字节序
-	serAddr.sin_addr.S_un.S_addr = inet_addr("127.0.0.1"); // 服务器的IP地址
+	serAddr.sin_addr.S_un.S_addr = inet_addr("127.0.0.1"); // 服务器的IP地址(localhost)
 
 	// 连接到服务器
 	if (0 != connect(serfd, (struct sockaddr*)&serAddr, sizeof(serAddr)))
@@ -69,35 +72,25 @@ void connectToHost()
 		return;
 	}
 
-	printf("连接成功！\n");
-
-	downloadFileName(serfd);                              // 输入文件名
-
-	// 开始处理消息,100为发送消息间隔
-	while (processMag(serfd))
-	{
-		//Sleep(100);
+	printf("服务器连接成功！欢迎使用本FTP系统！\n");
+	if (!signInOrRegister(serfd)) {
+		return;
 	}
+	//while (processMag(serfd));
 }
 
 // 处理消息
 bool processMag(SOCKET serfd)
 {
-
 	recv(serfd, g_recvBuf, 1024, 0);                     // 收到消息   
 	struct MsgHeader* msg = (struct MsgHeader*)g_recvBuf;
 
-	/*
-	*MSG_FILENAME       = 1,       // 文件名称                服务器使用
-	*MSG_FILESIZE       = 2,       // 文件大小                客户端使用
-	*MSG_READY_READ     = 3,       // 准备接受                客户端使用
-	*MSG_SENDFILE       = 4,       // 发送                    服务器使用
-	*MSG_SUCCESSED      = 5,       // 传输完成                两者都使用
-	*MSG_OPENFILE_FAILD = 6        // 告诉客户端文件找不到    客户端使用
-	*/
-
 	switch (msg->msgID)
 	{
+	case MSG_SIGN_IN:
+		return true;
+	case MSG_REGISTER:
+		return false;
 	case MSG_OPENFILE_FAILD:         // 6
 		downloadFileName(serfd);
 		break;
@@ -109,11 +102,121 @@ bool processMag(SOCKET serfd)
 		break;
 	case MSG_SUCCESSED:              // 5
 		printf("传输完成！\n");
-		closeSocket(serfd);
+		//closeSocket(serfd);
 		return false;
-		break;
 	}
 	return true;
+}
+
+bool signInOrRegister(SOCKET serfd) {
+	char flag[10];
+	printf("使用本FTP系统前请先进行登录或注册！\n");
+	printf("登录请输入s，注册请输入r，退出请输入q：");
+	while (1) {
+		scanf("%s", flag);
+		if (flag[0] == 'r' || flag[0] == 'R') {
+			if (!regist(serfd)) {
+				return false;
+			}
+		}
+		else if (flag[0] == 's' || flag[0] == 'S') {
+			signIn(serfd);
+			return true;
+		}
+		else if (flag[0] == 'q' || flag[0] == 'Q') {
+			return false;
+		}
+		else {
+			printf("输入格式不正确！请重新输入\n");
+			printf("登录请输入s，注册请输入r，退出请输入q：");
+		}
+	}
+}
+
+void signIn(SOCKET serfd) {
+	struct MsgHeader* msg;
+	while (1) {
+		struct MsgHeader login;
+		printf("请输入您的用户名：");
+		scanf("%s", &accountName);
+		printf("请输入您的密码：");
+		scanf("%s", &accountPassword);
+		login.msgID = MSG_SIGN_IN;
+		strcpy(login.signRegisInfo.accountName, accountName);
+		strcpy(login.signRegisInfo.accountPassword, accountPassword);
+		send(serfd, (char*)&login, sizeof(struct MsgHeader), 0);
+		recv(serfd, g_recvBuf, 1024, 0); 
+		msg = (struct MsgHeader*)g_recvBuf;
+		if (msg->signRegisInfo.result) {
+			printf("登陆成功！\n");
+			break;
+		}
+		else {
+			printf("您输入的用户名、密码不正确，请重新输入！\n");
+		}
+	}
+	return;
+}
+
+bool regist(SOCKET serfd) {
+	struct MsgHeader* msg;
+	struct MsgHeader regist;
+	int i, j;
+	int check = 0;
+	while (1) {
+		printf("请输入您的用户名，用户名应不超过20个字符：");
+		scanf("%s", &accountName);
+		if (strlen(accountName) > 20) {
+			printf("您输入的用户名不合规！");
+		}
+		else break;
+	}
+	while (1) {
+		printf("请输入您的密码，密码应不超过20个字符：");
+		scanf("%s", &accountPassword);
+		if (strlen(accountPassword) > 20) {
+			printf("您输入的密码不合规！\n");
+		}
+		else break;
+	}
+	while (1) {
+		printf("请再次输入您的密码：");
+		scanf("%s", &accountPasswordCheck);
+		for (i = 0, j = 0;;i++,j++) {
+			if (i == strlen(accountPassword) && j == strlen(accountPasswordCheck)) {
+				check = 1;
+				break;
+			}
+			else if (accountPassword[i] == accountPasswordCheck[j]) {
+				continue;
+			}
+			else {
+				check = 0;
+				break;
+			}
+		}
+		if (check==0) {
+			printf("您两次输入的密码不相同！\n");
+		}
+		else break;
+	}
+	regist.msgID = MSG_REGISTER;
+	strcpy(regist.signRegisInfo.accountName, accountName);
+	strcpy(regist.signRegisInfo.accountPassword, accountPassword);
+	send(serfd, (char*)&regist, sizeof(struct MsgHeader), 0);
+	printf("注册申请已发送！请等待客户端回答！\n");
+	recv(serfd, g_recvBuf, 1024, 0);
+	msg = (struct MsgHeader*)g_recvBuf;
+	if (msg->signRegisInfo.result) {
+		printf("注册成功！请登录后使用本系统！\n");
+		signIn(serfd);
+		return true;
+	}
+	else {
+		printf("注册申请未通过！请退出程序！\n");
+		system("pause");
+		return false;
+	}
 }
 
 void downloadFileName(SOCKET serfd)

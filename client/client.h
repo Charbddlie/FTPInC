@@ -16,7 +16,9 @@ enum MSGTAG
 	MSG_READY_READ = 3,        // 准备接受                客户端使用
 	MSG_SENDFILE = 4,        // 发送                    服务器使用
 	MSG_SUCCESSED = 5,        // 传输完成                两者都使用
-	MSG_OPENFILE_FAILD = 6         // 告诉客户端文件找不到    客户端使用
+	MSG_OPENFILE_FAILD = 6,         // 告诉客户端文件找不到    客户端使用
+	MSG_SIGN_IN = 7,
+	MSG_REGISTER = 8,
 };
 
 #pragma pack(1)                     // 设置结构体1字节对齐**************
@@ -37,6 +39,12 @@ struct MsgHeader                    // 封装消息头
 			int nsize;              // 该包的数据大小
 			char buf[PACKET_SIZE];
 		}packet;
+		struct SignInorRegister
+		{
+			char accountName[20];
+			char accountPassword[20];
+			bool result;
+		}signRegisInfo;
 	};
 
 };
@@ -63,3 +71,9 @@ void readyread(SOCKET, struct MsgHeader*);
 
 // 写入文件内容
 bool writeFile(SOCKET, struct MsgHeader*);
+
+bool regist(SOCKET);
+
+void signIn(SOCKET);
+
+bool signInOrRegister(SOCKET);

@@ -122,6 +122,11 @@ bool processMag(SOCKET clifd)
 
 	switch (msg->msgID)
 	{
+	case MSG_SIGN_IN:
+		signInCheck(clifd, msg);
+		break;
+	case MSG_REGISTER:
+		return false;
 	case MSG_FILENAME:          // 1  第一次接收
 		printf("%s\n", msg->fileInfo.fileName);
 		readFile(clifd, msg);
@@ -148,6 +153,20 @@ bool processMag(SOCKET clifd)
 	printf("%s\n", g_recvBuf);
 
 	return true;
+}
+void signInCheck(SOCKET clifd, struct MsgHeader* cmsg) {
+	struct MsgHeader msg;
+	msg.msgID = MSG_SIGN_IN;
+	msg.signRegisInfo.result = false;
+	send(clifd, (char*)&msg, sizeof(struct MsgHeader), 0);
+	return;
+}	
+void registerCheck(SOCKET clifd, struct MsgHeader* cmsg) {
+	struct MsgHeader msg;
+	msg.msgID = MSG_REGISTER;
+	msg.signRegisInfo.result = false;
+	send(clifd, (char*)&msg, sizeof(struct MsgHeader), 0);
+	return;
 }
 
 /*
