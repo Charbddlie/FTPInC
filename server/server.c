@@ -155,9 +155,50 @@ bool processMag(SOCKET clifd)
 	return true;
 }
 void signInCheck(SOCKET clifd, struct MsgHeader* cmsg) {
+	FILE* file = fopen("list.csv", "r");
+	int i, j;
+	bool result;
+	if (!file) {
+		printf("文件打开失败！");
+		exit(1);
+	}
+	char temp[50];
+	char name[20];
+	while (1) {
+		if (feof(file)) {
+			result = false;
+			break;
+		}
+		i = 0;
+		j = 0;
+		fgets(temp, 49, file);
+		while (temp[i] != ',') {
+			name[i] = temp[i];
+			i++;
+		}
+		name[i] = '\0';
+		if (strcmp(name, cmsg->signRegisInfo.accountName) != 0) {
+			continue;
+		}
+		else {
+			char password[20];
+			for(i += 1; temp[i] != ','; j++,i++) {
+				password[j] = temp[i];
+			}
+			password[j] = '\0';
+			if (strcmp(password, cmsg->signRegisInfo.accountPassword) != 0) {
+				result = false;
+				break;
+			}
+			else {
+				result = true;
+				break;
+			}
+		}
+	}
 	struct MsgHeader msg;
 	msg.msgID = MSG_SIGN_IN;
-	msg.signRegisInfo.result = false;
+	msg.signRegisInfo.result = result;
 	send(clifd, (char*)&msg, sizeof(struct MsgHeader), 0);
 	return;
 }	
