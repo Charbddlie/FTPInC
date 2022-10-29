@@ -126,6 +126,7 @@ bool processMag(SOCKET clifd)
 		signInCheck(clifd, msg);
 		break;
 	case MSG_REGISTER:
+		registerCheck(clifd, msg);
 		return false;
 	case MSG_FILENAME:          // 1  第一次接收
 		printf("%s\n", msg->fileInfo.fileName);
@@ -200,12 +201,89 @@ void signInCheck(SOCKET clifd, struct MsgHeader* cmsg) {
 	msg.msgID = MSG_SIGN_IN;
 	msg.signRegisInfo.result = result;
 	send(clifd, (char*)&msg, sizeof(struct MsgHeader), 0);
+	fclose(file);
 	return;
 }	
 void registerCheck(SOCKET clifd, struct MsgHeader* cmsg) {
+	FILE* file = fopen("list.csv", "r");
+	int i;
+	bool result;
+	if (!file) {
+		printf("文件打开失败！");
+		exit(1);
+	}
+	char temp[50];
+	char name[20];
+	while (1) {
+		if (feof(file)) {
+			result = true;
+			break;
+		}
+		i = 0;
+		fgets(temp, 49, file);
+		while (temp[i] != ',') {
+			name[i] = temp[i];
+			i++;
+		}
+		name[i] = '\0';
+		if (strcmp(name, cmsg->signRegisInfo.accountName) != 0) {
+			continue;
+		}
+		else {
+			result = false;
+			break;
+		}
+	}
+	fclose(file);
+	char getAnswer[5];
+	char au[5];
+	if (result == true) {
+		printf("姓名为%s的用户发来一个注册请求，请问是否同意？\n", cmsg->signRegisInfo.accountName);
+		while (1) {
+			printf("同意请输入y，不同意请输入n:");
+			scanf("%s", getAnswer);
+			if (getAnswer[0] == 'y' || getAnswer[0] == 'Y') {
+				printf("请为该用户设置权限：1（只能上传文件）、2（可以上传下载）、3（可以上传下载文件、修改目录）\n");
+				while (1) {
+					printf("请输入对应的编号（1、2、3）：");
+					scanf("%s", getAnswer);
+					if (getAnswer[0] == '1' || getAnswer[0] == '2' || getAnswer[0] == '3') {
+						au[0] = getAnswer[0];
+						au[1] = '\0';
+						break;
+					}
+					else {
+						printf("输入格式不正确，请重新输入！\n");
+					}
+				}
+				FILE* fileOut = fopen("list.csv", "a");
+				if (!fileOut) {
+					printf("文件打开失败！\n");
+					exit(-1);
+				}
+				char line[50];
+				line[0] = '\0';
+				strcat(line, cmsg->signRegisInfo.accountName);
+				strcat(line, ",");
+				strcat(line, cmsg->signRegisInfo.accountPassword);
+				strcat(line, ",");
+				strcat(line, au);
+				strcat(line, "\n");
+				fputs(line, fileOut);
+				break;
+			}
+			if (getAnswer[0] == 'n' || getAnswer[0] == 'N') {
+				result == false;
+				break;
+			}
+			else {
+				printf("输入格式不正确，请重新输入！\n");
+			}
+		}
+	}
 	struct MsgHeader msg;
 	msg.msgID = MSG_REGISTER;
-	msg.signRegisInfo.result = false;
+	msg.signRegisInfo.result = result;
 	send(clifd, (char*)&msg, sizeof(struct MsgHeader), 0);
 	return;
 }
