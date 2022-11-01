@@ -54,56 +54,6 @@ int server_check(char* username, char* password) {
 	return result;
 }	
 
-// int server_check(char* username, char* password)
-// {
-// 	char user[MAX_SIZE];
-// 	char passwd[MAX_SIZE];
-// 	char buf[MAX_SIZE];
-
-// 	size_t n, len = 0;
-// 	char *pch, *line = NULL;
-// 	int flag = 0;
-// 	FILE* fd;
-// 	fd = fopen("../.passwd", "r");
-// 	if(fd == NULL)
-// 	{
-// 		perror("file not found");
-// 		exit(1);
-// 	}
-
-// 	//验证用户名和密码是否合法
-// 	while((n = getline(&line, &len, fd)) != -1)
-// 	{
-// 		bzero(buf, sizeof(MAX_SIZE));
-// 		strcpy(buf, line);
-
-// 		pch = strtok(buf, " ");
-// 		strcpy(user, pch);
-
-// 		if(pch != NULL)
-// 		{
-// 			pch = strtok(NULL, " ");
-// 			strcpy(passwd, pch);
-// 		}
-// 		int i, str_len = strlen(passwd);
-// 		for(i = 0; i < str_len; i++)
-// 		{
-// 			if(isspace(passwd[i]) || passwd[i] == '\n')
-// 			{
-// 				passwd[i] = 0;
-// 			}
-// 		}
-
-// 		if((strcmp(user, username) == 0) && (strcmp(passwd, password) == 0))
-// 		{
-// 			flag = 1;
-// 			break;
-// 		}
-// 	}
-// 	free(line);
-// 	fclose(fd);
-// 	return flag;
-// }
 void file_write(int sock_fd,char *accountName ,char* au){
 	FILE* file = fopen("../.passwd", "a");
 	char buf[MAX_SIZE];
@@ -338,7 +288,7 @@ int server_cmd_list(int work_fd, int sock_fd)
 	send_response(sock_fd, 1);
 	char data[MAX_SIZE];
 	struct dirent* file;
-	DIR* direc = opendir("./");
+	DIR* direc = opendir("../user_dir/");
 	if(direc == NULL)
 	{
 		perror("open dir error");

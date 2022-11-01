@@ -27,7 +27,7 @@ void print_reply(int rc)
 			printf("\n\nWelcome!!! Please login or register first to use the FTP system.\n");
 			break;
 		case 221:
-			printf("Thanks you!\n");
+			printf("Good day!\n");
 			break;
 		case 226:
 			printf("Requested file action successful.\n");
