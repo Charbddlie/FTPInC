@@ -24,7 +24,7 @@ void print_reply(int rc)
 	switch (rc)
 	{
 		case 220:
-			printf("Welcome.\n");
+			printf("\n\nWelcome!!! Please login or register first to use the FTP system.\n");
 			break;
 		case 221:
 			printf("Thanks you!\n");
@@ -170,51 +170,145 @@ int client_send_cmd(char *arg, char *code)
 void client_login()
 {
 	char arg[100], code[5], user[100];
+	int wait,ret_code;
+	char *pass;
 	bzero(arg, sizeof(arg));
 	bzero(code, sizeof(code));
 	bzero(user, sizeof(user));
+	while(1){
+		//获取用户名
+		printf("NAME: ");
+		fflush(stdout);
+		scanf("%s",user);
 
-	//获取用户名
-	printf("NAME: ");
-	fflush(stdout);
-	read_input(user, 100);
+		//发送用户名到服务器
+		strcpy(code, "USER");
+		strcpy(arg, user);
+		client_send_cmd(arg, code);
 
-	//发送用户名到服务器
-	strcpy(code, "USER");
-	strcpy(arg, user);
-	client_send_cmd(arg, code);
+		//等待应答码
+		recv(sock_fd, &wait, sizeof(wait), 0);
 
-	//等待应答码
-	int wait;
-	recv(sock_fd, &wait, sizeof(wait), 0);
+		//获取密码
+		fflush(stdout);
+		pass = getpass("Password:");
 
-	//获取密码
-	fflush(stdout);
-	char *pass = getpass("Password:");
+		//发送密码到服务器
+		strcpy(code, "PASS");
+		strcpy(arg, pass);
+		client_send_cmd(arg, code);
 
-	//发送密码到服务器
-	strcpy(code, "PASS");
-	strcpy(arg, pass);
-	client_send_cmd(arg, code);
-
-	//等待响应
-	int ret_code = read_reply();
-	switch(ret_code)
-	{
-		case 230:
-			printf("login success!\n");
+		//等待响应
+		ret_code = read_reply();
+		if(ret_code==LOGIN_SUCCESS){
+			printf("Login succeed!\n");
 			break;
-		case 430:
-			printf("Invaild username/password.\n");
+		}
+		else if(ret_code==LOGIN_FAILED){
+			printf("Invaild username/password. Please try again!\n");
+			send(sock_fd, "LOGIN", (int)strlen("LOGIN"), 0);
+			continue;
+		}
+		else{
+			perror("Error reading message from server");
+			exit(1);
 			break;
-		default:
-			{
-				perror("error reading message from server");
-				exit(1);
-				break;
-			}
+		}
 	}
 
+}
+
+void client_register() {
+	int i, j;
+	char accountName[20], accountPassword[20], accountPasswordCheck[20];
+	int ret_code;
+	char *pass;
+	int check = 0;
+	while (1) {
+		printf("Please enter your name for the system less than 20 bytes:\n");
+		printf("NAME: ");
+		scanf("%s", accountName);
+		if (strlen(accountName) > 20) {
+			printf("Illegal input!");
+			continue;
+		}
+		else {
+			client_send_cmd(accountName, "USER");
+			ret_code=read_reply();
+			if(ret_code==REGIST_NAME_REPEAT){
+				printf("Your name has existed! Please change one!\n");
+				send(sock_fd, "REGISTER", (int)strlen("REGISTER"), 0);
+				continue;
+			}
+			if(ret_code==REGIST_NAME_OK){
+				break;
+			}
+		}
+	}
+	printf("Your application has been sent, wait a moment for manager to check！\n");
+	ret_code=read_reply();
+	if (ret_code==REGIST_APPLICATION_OK) {
+		printf("Your application has passed！ \n");
+	}
+	else if(ret_code==REGIST_REFUSED) {
+		printf("Your application has been refused!Please quit the system!\n");
+		exit(1);
+		system("pause");
+		return;
+	}
+	else{
+		printf("system wrong!");
+		exit(1);
+		return;
+	}
+	while (1) {
+		accountPassword[0]='\0';
+		printf("Please enter your password less than 20 bytes.\n");
+		//fflush(stdout);
+		pass = getpass("Password:");
+		strcat(accountPassword,pass);
+		if (strlen(accountPassword) > 20) {
+			printf("Illegal input！\n");
+		}
+		else break;
+	}
+	while (1) {
+		accountPasswordCheck[0]='\0';
+		//fflush(stdout);
+		bzero(pass, sizeof(pass));
+		pass = getpass("Please re-enter your password:");
+		strcat(accountPasswordCheck,pass);
+		for (i = 0, j = 0;;i++,j++) {
+			if (i == strlen(accountPassword) && j == strlen(accountPasswordCheck)) {
+				check = 1;
+				break;
+			}
+			else if (accountPassword[i] == accountPasswordCheck[j]) {
+				continue;
+			}
+			else {
+				check = 0;
+				break;
+			}
+		}
+		if (check==0) {
+			printf("Your password entered is different from the last time！\n");
+		}
+		else break;
+	}
+	client_send_cmd(accountPassword, "PASS");
+	ret_code=read_reply();
+	if (ret_code==REGIST_SUCCESS) {
+		printf("Register successfully！ Please login!\n");
+		send(sock_fd, "LOGIN", (int)strlen("LOGIN"), 0);
+		client_login();
+		return;
+	}
+	else{
+		printf("system wrong!");
+		exit(1);
+		return;
+	}
 }
 
 int main(int argc, char *argv[])
@@ -224,7 +318,7 @@ int main(int argc, char *argv[])
 	struct addrinfo hints, *result, *rp;
 	if(argc != 2)
 	{
-		printf("please input client hostname\n");
+		printf("Please input client hostname\n");
 		exit(1);
 	}
 
@@ -262,10 +356,28 @@ int main(int argc, char *argv[])
 	//连接成功
 	printf("Connected to %s\n", host);
 	print_reply(read_reply());
-
-	//获取用户的名字和密码
-	client_login();
-
+	char choice[5];
+	while(1){
+		printf("**********************************************************************\n");
+		printf("To login please press 'l' or 'L', to register please press 'r' or 'R'!\n");
+		printf("YOUR CHOICE: ");
+		scanf("%s",choice);
+		if(choice[0]=='r'||choice[0]=='R'){
+			send(sock_fd, "REGISTER", (int)strlen("REGISTER"), 0);
+			fflush(stdin);
+			client_register();
+			break;
+		}
+		if(choice[0]=='l'||choice[0]=='L'){
+			send(sock_fd, "LOGIN", (int)strlen("LOGIN"), 0);
+			fflush(stdin);
+			client_login();
+			break;
+		}
+		else{
+			printf("Sorry but you have pressed a wrong letter,please choose again!\n");
+		}
+	}
 	while(1)
 	{
 		//获取到用户输入的命令

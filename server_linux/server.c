@@ -8,57 +8,227 @@
 #include "server.h"
 #define DATA_PORT   20
 #define LISTEN_PORT 21
-
-int server_check(char* username, char* password)
-{
-	char user[MAX_SIZE];
-	char passwd[MAX_SIZE];
-	char buf[MAX_SIZE];
-
-	size_t n, len = 0;
-	char *pch, *line = NULL;
-	int flag = 0;
-	FILE* fd;
-	fd = fopen(".passwd", "r");
-	if(fd == NULL)
-	{
-		perror("file not found");
+int server_check(char* username, char* password) {
+	FILE* file = fopen("../.passwd", "r");
+	int i, j;
+	int result;
+	if (!file) {
+		printf("文件打开失败！");
 		exit(1);
 	}
-
-	//验证用户名和密码是否合法
-	while((n = getline(&line, &len, fd)) != -1)
-	{
-		bzero(buf, sizeof(MAX_SIZE));
-		strcpy(buf, line);
-
-		pch = strtok(buf, " ");
-		strcpy(user, pch);
-
-		if(pch != NULL)
-		{
-			pch = strtok(NULL, " ");
-			strcpy(passwd, pch);
+	char temp[50];
+	char name[20];
+	while (1) {
+		if (feof(file)) {
+			result = 0;
+			break;
 		}
-		int i, str_len = strlen(passwd);
-		for(i = 0; i < str_len; i++)
-		{
-			if(isspace(passwd[i]) || passwd[i] == '\n')
-			{
-				passwd[i] = 0;
+		i = 0;
+		j = 0;
+		fgets(temp, 49, file);
+		while (temp[i] != ',') {
+			name[i] = temp[i];
+			i++;
+		}
+		name[i] = '\0';
+		if (strcmp(name, username) != 0) {
+			continue;
+		}
+		else {
+			char userpassword[20];
+			for(i += 1; temp[i] != ','; j++,i++) {
+				userpassword[j] = temp[i];
+			}
+			userpassword[j] = '\0';
+			if (strcmp(userpassword, password) != 0) {
+				result = 0;
+				break;
+			}
+			else {
+				result = 1;
+				break;
 			}
 		}
+	}
+	fclose(file);
+	return result;
+}	
 
-		if((strcmp(user, username) == 0) && (strcmp(passwd, password) == 0))
-		{
-			flag = 1;
+// int server_check(char* username, char* password)
+// {
+// 	char user[MAX_SIZE];
+// 	char passwd[MAX_SIZE];
+// 	char buf[MAX_SIZE];
+
+// 	size_t n, len = 0;
+// 	char *pch, *line = NULL;
+// 	int flag = 0;
+// 	FILE* fd;
+// 	fd = fopen("../.passwd", "r");
+// 	if(fd == NULL)
+// 	{
+// 		perror("file not found");
+// 		exit(1);
+// 	}
+
+// 	//验证用户名和密码是否合法
+// 	while((n = getline(&line, &len, fd)) != -1)
+// 	{
+// 		bzero(buf, sizeof(MAX_SIZE));
+// 		strcpy(buf, line);
+
+// 		pch = strtok(buf, " ");
+// 		strcpy(user, pch);
+
+// 		if(pch != NULL)
+// 		{
+// 			pch = strtok(NULL, " ");
+// 			strcpy(passwd, pch);
+// 		}
+// 		int i, str_len = strlen(passwd);
+// 		for(i = 0; i < str_len; i++)
+// 		{
+// 			if(isspace(passwd[i]) || passwd[i] == '\n')
+// 			{
+// 				passwd[i] = 0;
+// 			}
+// 		}
+
+// 		if((strcmp(user, username) == 0) && (strcmp(passwd, password) == 0))
+// 		{
+// 			flag = 1;
+// 			break;
+// 		}
+// 	}
+// 	free(line);
+// 	fclose(fd);
+// 	return flag;
+// }
+void file_write(int sock_fd,char *accountName ,char* au){
+	FILE* file = fopen("../.passwd", "a");
+	char buf[MAX_SIZE];
+	if (!file) {
+		printf("File open failed\n");
+		exit(-1);
+	}
+	char accountPassword[20];
+	bzero(buf, sizeof(buf));
+	recv_data(sock_fd, buf, sizeof(buf));
+	int i=5;
+	int j=0;
+	while(buf[i]&&buf[i]!='\0'){
+		accountPassword[j++]=buf[i++];
+	}
+	char line[50];
+	line[0] = '\0';
+	strcat(line, accountName);
+	strcat(line, ",");
+	strcat(line, accountPassword);
+	strcat(line, ",");
+	strcat(line, au);
+	strcat(line, "\n");
+	fputs(line, file);
+	fclose(file);
+	return;
+}
+
+int manager_check(int sock_fd,char* accountName,char *au){
+	char getAnswer[5];
+	printf("A user named %s just sent a register application!\n", accountName);
+	while (1) {
+		printf("Agree please press 'y' or 'Y'，or press 'N' or 'n' to refuse:");
+		scanf("%s", getAnswer);
+		if (getAnswer[0] == 'y' || getAnswer[0] == 'Y') {
+			printf("Please set permissions for this user：1（can only upload）、2（upload & download）、3（upload & download & change directory）\n");
+			while (1) {
+				printf("Please enter number（1、2、3）：");
+				scanf("%s", getAnswer);
+				if (getAnswer[0] == '1' || getAnswer[0] == '2' || getAnswer[0] == '3') {
+					au[0]='\0';
+					switch(getAnswer[0]){
+						case '3':
+							strcat(au,"HIGH");
+							break;
+						case '2':
+							strcat(au,"MID");
+							break;
+						case '1':
+							strcat(au,"LOW");
+							break;
+					}
+					break;
+				}
+				else {
+					printf("Illegal input!\n");
+				}
+			}
+			send_response(sock_fd, REGIST_APPLICATION_OK);
+			return 1;
+		}
+		if (getAnswer[0] == 'n' || getAnswer[0] == 'N') {
+			return 0;
+		}
+		else {
+			printf("Illegal input!\n");
+		}
+	}
+}
+
+int server_register(int sock_fd){
+	int i,ret,result,flag,j;
+	char temp[60];
+	char name[20];
+	char accountName[20];
+	FILE* file = fopen("../.passwd", "r");
+	if (!file) {
+		printf("文件打开失败！");
+		exit(1);
+	}
+	char buf[MAX_SIZE];
+	bzero(buf, sizeof(buf));
+	recv(sock_fd, buf, sizeof(buf), 0);
+	i=5;
+	j=0;
+	while(buf[i]){
+		accountName[j++]=buf[i++];
+	}
+	accountName[j]='\0';
+	while(1){
+		if (feof(file)) {
+			result = 1;
+			break;
+		}
+		i = 0;
+		fgets(temp, 59, file);
+		while (temp[i] != ',') {
+			name[i] = temp[i];
+			i++;
+		}
+		name[i] = '\0';
+		if (strcmp(name, accountName) != 0) {
+			continue;
+		}
+		else {
+			result = 0;
 			break;
 		}
 	}
-	free(line);
-	fclose(fd);
-	return flag;
+	fclose(file);
+	if(result==0){
+		return REGIST_NAME_REPEAT;
+	}
+	if(result==1){
+		send_response(sock_fd, REGIST_NAME_OK);
+		char au[5];
+		ret=manager_check(sock_fd,accountName,au);
+		if(ret==0) return 0;
+		else {
+			file_write(sock_fd,accountName,au);
+			return 1;
+		}
+	}
 }
+
 	
 int server_login(int sock_fd)
 {
@@ -238,16 +408,43 @@ void work_process(int sock_fd)
 
 	send_response(sock_fd, 220);
 
-	//认证失败
-	if(server_login(sock_fd) != 1)
-	{
-		send_response(sock_fd, 430);
-		exit(1);
-	}
-	//认证成功
-	else
-	{
-		send_response(sock_fd, 230);
+
+	int ret;
+	char loginOrRegist[MAX_SIZE];
+
+	while(1){
+		bzero(loginOrRegist, sizeof(loginOrRegist));
+		//login & register?
+		if((ret = recv_data(sock_fd, loginOrRegist, sizeof(loginOrRegist))) < 0){
+			perror("recv user error:");
+			exit(1);
+		}
+		if(strcmp(loginOrRegist,"REGISTER")==0){
+			ret=server_register(sock_fd);
+			if(ret==REGIST_NAME_REPEAT){
+				send_response(sock_fd, REGIST_NAME_REPEAT);
+				continue;
+			}
+			if(ret == 0){
+				send_response(sock_fd, REGIST_REFUSED);
+			}
+			else{
+				send_response(sock_fd, REGIST_SUCCESS);
+			}
+			continue;
+		}
+		if(strcmp(loginOrRegist,"LOGIN")==0){
+			ret=server_login(sock_fd);
+			//认证失败
+			if(ret != 1){
+				send_response(sock_fd, LOGIN_FAILED);
+				continue;
+			}
+			else{
+				send_response(sock_fd, LOGIN_SUCCESS);
+				break;
+			}
+		}
 	}
 	//处理请求
 	while(1)

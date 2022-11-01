@@ -26,4 +26,6 @@ int client_send_cmd(char *arg, char *code);
 //客户端登录
 void client_login();
 
+void client_register();
+
 #endif

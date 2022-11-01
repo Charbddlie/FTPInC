@@ -21,7 +21,8 @@ int init_server(int port)
 
 	//设置端口复用
 	int flag = 1;
-	if((ret = setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag))) < 0)
+	ret = setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
+	if((ret) < 0)
 	{
 		close(listen_fd);
 		perror("set port reuse error:");

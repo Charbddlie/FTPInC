@@ -31,6 +31,16 @@
 #define LISTEN_PORT 21
 #define MAX_SIZE	1024
 
+#define LOGIN_SUCCESS   230
+#define LOGIN_FAILED    430
+#define LOGIN           100
+#define REGIST_SUCCESS  101
+#define REGISTER        102
+#define REGIST_REFUSED   103
+#define REGIST_NAME_REPEAT        104
+#define REGIST_NAME_OK   105
+#define REGIST_APPLICATION_OK   106
+
 int init_server(int port);
 int accept_client(int sock_fd);
 int connect_server(int port, char *serv_ip);

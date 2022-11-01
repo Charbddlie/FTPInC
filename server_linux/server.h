@@ -13,6 +13,12 @@
 int server_check(char* username, char* password);
 //接收用户名和密码
 int server_login(int sock_fd);
+//
+void file_write(int sock_fd,char *accountName ,char* au);
+//
+int manager_check(int sock_fd,char* accountName,char *au);
+//
+int server_register(int sock_fd);
 //接收客户端发送的命令
 int server_get_request(int sock_fd, char *cmd, char *arg);
 //用于数据传输的连接
