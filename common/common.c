@@ -100,6 +100,7 @@ int send_response(int sock_fd, int ret_code)
 		perror("send error:");
 		exit(1);
 	}
+
 	return 0;
 }
 

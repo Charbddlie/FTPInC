@@ -24,7 +24,15 @@ int server_get_request(int sock_fd, char *cmd, char *arg);
 //用于数据传输的连接
 int server_work_conn(int sock_fd);
 //显示当前目录下的文件
-int server_cmd_list(int work_fd, int sock_fd);
+int server_cmd_ls(int work_fd, int sock_fd);
+//显示当前所在目录
+int server_cmd_pwd(int work_fd, int sock_fd);
+//新建文件夹
+int server_cmd_mkdir(int work_fd, int sock_fd);
+//变更所在目录
+int server_cmd_cd(int work_fd, int sock_fd);
+//删除文件
+int server_cmd_delete(int work_fd, int sock_fd);
 //传输文件
 void server_cmd_retr(int sock_fd, int work_fd, char *file_name);
 //处理请求的进程
