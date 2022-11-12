@@ -23,22 +23,28 @@ int main()
 	{
 		//接收连接
 		sock_fd = accept_client(listen_fd);
-		//创建子进程
-		if ((pid = fork()) < 0)
-		{
-			perror("fork error");
-			close(sock_fd);
-			exit(1);
-		}
-		else if (pid == 0) // child process
-		{
-			close(listen_fd);
-			work_process(sock_fd);
-			close(sock_fd);
-			exit(0);
-		}
-		// 接受到的连接交给子进程处理，父进程不用动
-		// close(sock_fd);
+		work_process(sock_fd);
+		close(sock_fd);
+
+
+		// //接收连接
+		// sock_fd = accept_client(listen_fd);
+		// //创建子进程
+		// if ((pid = fork()) < 0)
+		// {
+		// 	perror("fork error");
+		// 	close(sock_fd);
+		// 	exit(1);
+		// }
+		// else if (pid == 0) // child process
+		// {
+		// 	close(listen_fd);
+		// 	work_process(sock_fd);
+		// 	close(sock_fd);
+		// 	exit(0);
+		// }
+		// // 接受到的连接交给子进程处理，父进程不用动
+		// // close(sock_fd);
 	}
 	close(listen_fd);
 	return 0;
@@ -372,10 +378,10 @@ int server_get_request(int sock_fd, char *cmd, char *arg)
 		exit(1);
 	}
 
-	strcpy(cmd, buf);
-	// 下两行为原有代码，可能是用于处理quit指令的？
-	char *temp = buf + 5;
-	strcpy(arg, temp);
+	char *delim = " ";
+	cmd = strtok(buf, delim);
+	arg = strtok(NULL, delim);
+	printf("cmd: %s arg: %s", cmd, arg);
 
 	if(strcmp(cmd, "QUIT") == 0)
 	{
@@ -451,7 +457,7 @@ int server_cmd_ls(int work_fd, int sock_fd)
 	{
 		perror("send error");
 	}
-	send_response(sock_fd, 226);
+	send_response(sock_fd, GET_SUCCESS);
 	return 0;
 }
 
@@ -466,7 +472,7 @@ int server_cmd_pwd(int work_fd, int sock_fd)
 	{
 		perror("send error");
 	}
-	send_response(sock_fd, 226);
+	send_response(sock_fd, GET_SUCCESS);
 	return 0;
 }
 
@@ -608,7 +614,7 @@ void server_cmd_retr(int sock_fd, int work_fd, char *file_name)
 		perror("send file error");
 		exit(1);
 	}
-	send_response(sock_fd, 226);
+	send_response(sock_fd, GET_SUCCESS);
 	if((ret = munmap(src, file_size)) < 0)
 	{
 		perror("munmap error");
@@ -616,4 +622,3 @@ void server_cmd_retr(int sock_fd, int work_fd, char *file_name)
 	}
 	close(fd);
 }
-		

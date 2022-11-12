@@ -10,9 +10,9 @@
 
 #include "../common/common.h"
 //返回服务端回送的回应码
-int read_reply();
+int get_return_code();
 //根据回应码在终端上输出相应的信息
-void print_reply(int rc);
+void print_return_code(int rc);
 //客户端读取命令
 int client_read_command(char *buf, int size, char *arg, char *code);
 //向服务端获取指定文件

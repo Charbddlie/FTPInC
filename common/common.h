@@ -45,6 +45,9 @@
 #define CMD_SUCCESS 200
 #define QUIT_SUCESS 221
 #define CMD_FAIL    502
+#define CONN_SUCCESS 220
+#define GET_SUCCESS 226
+#define FILE_UNVAIL 550
 
 int init_server(int port);
 int accept_client(int sock_fd);

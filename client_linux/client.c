@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 
 	//连接成功
 	printf("Connected to %s\n", host);
-	print_reply(read_reply());
+	print_return_code(get_return_code());
 	char choice[5];
 	while (1)
 	{
@@ -95,10 +95,10 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 
-		ret_code = read_reply(); //读取服务器响应
+		ret_code = get_return_code(); //读取服务器响应
 		if (ret_code == QUIT_SUCESS)
 		{
-			print_reply(QUIT_SUCESS);
+			print_return_code(QUIT_SUCESS);
 			break;
 		}
 		if (ret_code == CMD_FAIL)
@@ -136,14 +136,14 @@ int main(int argc, char *argv[])
 			}
 			else if (strcmp(code, "RETR") == 0)
 			{
-				if (read_reply() == 550)
+				if (get_return_code() == 550)
 				{
-					print_reply(550);
+					print_return_code(550);
 					close(work_fd);
 					continue;
 				}
 				client_get(work_fd, arg);
-				print_reply(read_reply());
+				print_return_code(get_return_code());
 			}
 		}
 	}
@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-int read_reply()
+int get_return_code()
 {
 	int ret_code = 0;
 	if (recv(sock_fd, &ret_code, sizeof(ret_code), 0) < 0) 
@@ -162,7 +162,7 @@ int read_reply()
 	return ntohl(ret_code);
 }
 	
-void print_reply(int rc) 
+void print_return_code(int rc) 
 {
 	switch (rc)
 	{
@@ -170,10 +170,10 @@ void print_reply(int rc)
 			printf("\n\nWelcome!!! Please login or register first to use the FTP system.\n");
 			break;
 		case QUIT_SUCESS:
-			printf("Good day!\n");
+			printf("Good bye!\n");
 			break;
-		case 226:
-			printf("Requested file action successful.\n");
+		case GET_SUCCESS:
+			printf("Get file succeeded.\n");
 			break;
 		case 550:
 			printf("File unavailable.\n");
@@ -530,7 +530,7 @@ void client_login()
 		client_send_cmd(arg, code);
 
 		//等待响应
-		ret_code = read_reply();
+		ret_code = get_return_code();
 		if(ret_code==LOGIN_SUCCESS){
 			printf("Login succeed!\n");
 			break;
@@ -564,7 +564,7 @@ void client_register() {
 		}
 		else {
 			client_send_cmd(accountName, "USER");
-			ret_code=read_reply();
+			ret_code=get_return_code();
 			if(ret_code==REGIST_NAME_REPEAT){
 				printf("Your name has existed! Please change one!\n");
 				send(sock_fd, "REGISTER", (int)strlen("REGISTER"), 0);
@@ -576,7 +576,7 @@ void client_register() {
 		}
 	}
 	printf("Your application has been sent, wait a moment for manager to check！\n");
-	ret_code=read_reply();
+	ret_code=get_return_code();
 	if (ret_code==REGIST_APPLICATION_OK) {
 		printf("Your application has passed！ \n");
 	}
@@ -629,7 +629,7 @@ void client_register() {
 		else break;
 	}
 	client_send_cmd(accountPassword, "PASS");
-	ret_code=read_reply();
+	ret_code=get_return_code();
 	if (ret_code==REGIST_SUCCESS) {
 		printf("Register successfully！ Please login!\n");
 		send(sock_fd, "LOGIN", (int)strlen("LOGIN"), 0);
