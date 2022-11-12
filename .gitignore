@@ -54,3 +54,5 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+server_linux/server
+client_linux/client

@@ -25,10 +25,11 @@
 #include <netdb.h>
 #include <sys/mman.h>
 
-//传输数据的端口用20端口
-#define WORK_PORT   20
-//处理连接的端口用21端口
-#define LISTEN_PORT 21
+//传输数据的端口用
+#define WORK_PORT   4500
+//处理连接的端口用
+#define LISTEN_PORT 4501
+
 #define MAX_SIZE	1024
 
 #define LOGIN_SUCCESS   230
