@@ -43,7 +43,7 @@ int init_server(int port)
 	}
 	
 	//将套接字设为监听状态
-	if((ret = listen(listen_fd, 20)) < 0)
+	if ((ret = listen(listen_fd, port)) < 0)
 	{
 		close(listen_fd);
 		perror("listen error");
@@ -57,6 +57,7 @@ int accept_client(int listen_fd)
 	int sock_fd;
 	struct sockaddr_in client_addr;
 	socklen_t len = sizeof(client_addr);
+	
 	sock_fd = accept(listen_fd, (struct sockaddr *)&client_addr, &len);
 	if(sock_fd < 0)
 	{

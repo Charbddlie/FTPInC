@@ -26,7 +26,7 @@
 #include <sys/mman.h>
 
 //传输数据的端口用
-#define WORK_PORT   4500
+#define DATA_PORT   4500
 //处理连接的端口用
 #define LISTEN_PORT 4501
 
@@ -41,6 +41,10 @@
 #define REGIST_NAME_REPEAT        104
 #define REGIST_NAME_OK   105
 #define REGIST_APPLICATION_OK   106
+
+#define CMD_SUCCESS 200
+#define QUIT_SUCESS 221
+#define CMD_FAIL    502
 
 int init_server(int port);
 int accept_client(int sock_fd);

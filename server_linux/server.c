@@ -8,12 +8,142 @@
 #include "server.h"
 #include <fcntl.h>
 #include <sys/stat.h>
-#define DATA_PORT   20
-#define LISTEN_PORT 21
 
 #define USER_DIR "/user_dir"
 
-char current_dir[MAX_SIZE] = USER_DIR; 
+char current_dir[MAX_SIZE] = USER_DIR;
+
+int main()
+{
+	int listen_fd, sock_fd, pid;
+
+	listen_fd = init_server(LISTEN_PORT);
+
+	while (1)
+	{
+		//接收连接
+		sock_fd = accept_client(listen_fd);
+		//创建子进程
+		if ((pid = fork()) < 0)
+		{
+			perror("fork error");
+			close(sock_fd);
+			exit(1);
+		}
+		else if (pid == 0) // child process
+		{
+			close(listen_fd);
+			work_process(sock_fd);
+			close(sock_fd);
+			exit(0);
+		}
+		// 接受到的连接交给子进程处理，父进程不用动
+		// close(sock_fd);
+	}
+	close(listen_fd);
+	return 0;
+}
+
+void work_process(int sock_fd)
+{
+	int work_fd;
+	char cmd[10], arg[MAX_SIZE];
+
+	send_response(sock_fd, 220);
+
+	int ret;
+	char loginOrRegist[MAX_SIZE];
+
+	while (1)
+	{
+		bzero(loginOrRegist, sizeof(loginOrRegist));
+		// login & register?
+		if ((ret = recv_data(sock_fd, loginOrRegist, sizeof(loginOrRegist))) < 0)
+		{
+			perror("recv user error:");
+			exit(1);
+		}
+		if (strcmp(loginOrRegist, "REGISTER") == 0)
+		{
+			ret = server_register(sock_fd);
+			if (ret == REGIST_NAME_REPEAT)
+			{
+				send_response(sock_fd, REGIST_NAME_REPEAT);
+				continue;
+			}
+			if (ret == 0)
+			{
+				send_response(sock_fd, REGIST_REFUSED);
+			}
+			else
+			{
+				send_response(sock_fd, REGIST_SUCCESS);
+			}
+			continue;
+		}
+		if (strcmp(loginOrRegist, "LOGIN") == 0)
+		{
+			ret = server_login(sock_fd);
+			//认证失败
+			if (ret != 1)
+			{
+				send_response(sock_fd, LOGIN_FAILED);
+				continue;
+			}
+			else
+			{
+				send_response(sock_fd, LOGIN_SUCCESS);
+				break;
+			}
+		}
+	}
+
+	//处理请求
+	while (1)
+	{
+		//接收客户端的请求并解析
+		int ret_code = server_get_request(sock_fd, cmd, arg);
+		if ((ret_code < 0) || (ret_code == QUIT_SUCESS))
+			break;
+
+		if (ret_code == CMD_SUCCESS)
+		{
+			//创建与客户端的数据连接,之前的是监听连接
+			if ((work_fd = server_work_conn(sock_fd)) < 0)
+			{
+				close(sock_fd);
+				exit(1);
+			}
+			//创建了数据连接之后,执行对应的命令即可
+			if (strcmp(cmd, "LS") == 0)
+			{
+				server_cmd_ls(work_fd, sock_fd);
+			}
+			else if (strcmp(cmd, "PWD") == 0)
+			{
+				server_cmd_pwd(work_fd, sock_fd);
+			}
+			else if (strcmp(cmd, "MKDIR") == 0)
+			{
+				server_cmd_mkdir(work_fd, sock_fd);
+			}
+			else if (strcmp(cmd, "CD") == 0)
+			{
+				server_cmd_cd(work_fd, sock_fd);
+			}
+			else if (strcmp(cmd, "DELETE") == 0)
+			{
+				server_cmd_delete(work_fd, sock_fd);
+			}
+			else if (strcmp(cmd, "RETR") == 0)
+			{
+				server_cmd_retr(sock_fd, work_fd, arg);
+			}
+
+			close(work_fd);
+		}
+	}
+}
 
 int server_check(char* username, char* password) {
 	FILE* file = fopen("../.passwd", "r");
@@ -186,14 +316,13 @@ int server_register(int sock_fd){
 	}
 }
 
-	
 int server_login(int sock_fd)
 {
 	int ret;
 	char buf[MAX_SIZE];
 	char user[MAX_SIZE];
 	char passwd[MAX_SIZE];
-	bzero(buf, sizeof(buf));
+	bzero(buf, sizeof(buf));//数组清零
 	bzero(user, sizeof(user));
 	bzero(passwd, sizeof(passwd));
 
@@ -231,7 +360,7 @@ int server_login(int sock_fd)
 
 int server_get_request(int sock_fd, char *cmd, char *arg)
 {
-	int ret_code = 200;
+	int ret_code = CMD_SUCCESS;
 	char buf[MAX_SIZE];
 
 	bzero(buf, sizeof(buf));
@@ -250,16 +379,16 @@ int server_get_request(int sock_fd, char *cmd, char *arg)
 
 	if(strcmp(cmd, "QUIT") == 0)
 	{
-		ret_code = 221;
+		ret_code = QUIT_SUCESS;
 	}
 	else if((strcmp(cmd, "USER") == 0) || (strcmp(cmd, "PASS") == 0) || (strcmp(cmd, "LS") == 0) || (strcmp(cmd, "RETR") == 0) || (strcmp(cmd, "PWD") == 0) || (strcmp(cmd, "MKDIR") == 0) || (strcmp(cmd, "CD") == 0 )|| (strcmp(cmd, "DELETE") == 0 ))
 	{
-		ret_code = 200;
+		ret_code = CMD_SUCCESS;
 	}
 	else
 	{
 		printf("cmd:%s\n",cmd);
-		ret_code = 502;
+		ret_code = CMD_FAIL;
 	}
 	send_response(sock_fd, ret_code);
 	return ret_code;
@@ -282,7 +411,7 @@ int server_work_conn(int sock_fd)
 	inet_ntop(AF_INET, &client_addr.sin_addr, buf, sizeof(buf));
 
 	//创建到客户端的数据连接
-	if((work_fd = connect_server(WORK_PORT, buf)) < 0)
+	if((work_fd = connect_server(DATA_PORT, buf)) < 0)
 	{
 		exit(1);
 	}
@@ -487,127 +616,4 @@ void server_cmd_retr(int sock_fd, int work_fd, char *file_name)
 	}
 	close(fd);
 }
-
-void work_process(int sock_fd)
-{
-	int work_fd;
-	char cmd[10], arg[MAX_SIZE];
-
-	send_response(sock_fd, 220);
-
-
-	int ret;
-	char loginOrRegist[MAX_SIZE];
-
-	while(1){
-		bzero(loginOrRegist, sizeof(loginOrRegist));
-		//login & register?
-		if((ret = recv_data(sock_fd, loginOrRegist, sizeof(loginOrRegist))) < 0){
-			perror("recv user error:");
-			exit(1);
-		}
-		if(strcmp(loginOrRegist,"REGISTER")==0){
-			ret=server_register(sock_fd);
-			if(ret==REGIST_NAME_REPEAT){
-				send_response(sock_fd, REGIST_NAME_REPEAT);
-				continue;
-			}
-			if(ret == 0){
-				send_response(sock_fd, REGIST_REFUSED);
-			}
-			else{
-				send_response(sock_fd, REGIST_SUCCESS);
-			}
-			continue;
-		}
-		if(strcmp(loginOrRegist,"LOGIN")==0){
-			ret=server_login(sock_fd);
-			//认证失败
-			if(ret != 1){
-				send_response(sock_fd, LOGIN_FAILED);
-				continue;
-			}
-			else{
-				send_response(sock_fd, LOGIN_SUCCESS);
-				break;
-			}
-		}
-	}
-	//处理请求
-	while(1)
-	{
-		//接收客户端的请求并解析
-		int ret_code = server_get_request(sock_fd, cmd, arg);
-		if((ret_code < 0) || (ret_code == 221))
-			break;
-
-		if(ret_code == 200)
-		{
-			//创建与客户端的数据连接,之前的是监听连接
-			if((work_fd = server_work_conn(sock_fd)) < 0)
-			{
-				close(sock_fd);
-				exit(1);
-			}
-			//创建了数据连接之后,执行对应的命令即可
-			if(strcmp(cmd, "LS") == 0)
-			{
-				server_cmd_ls(work_fd, sock_fd);
-			}
-			else if(strcmp(cmd, "PWD") == 0)
-			{
-				server_cmd_pwd(work_fd, sock_fd);
-			}
-			else if(strcmp(cmd, "MKDIR") == 0)
-			{
-				server_cmd_mkdir(work_fd, sock_fd);
-			}
-			else if(strcmp(cmd, "CD") == 0)
-			{
-				server_cmd_cd(work_fd, sock_fd);
-			}
-			else if(strcmp(cmd, "DELETE") == 0)
-			{
-				server_cmd_delete(work_fd, sock_fd);
-			}
-			else if(strcmp(cmd, "RETR") == 0)
-			{
-				server_cmd_retr(sock_fd, work_fd, arg);
-			}
-
-			close(work_fd);
-		}
-	}
-}
 		
-
-
-int main()
-{
-	int listen_fd, sock_fd, pid;
-
-	listen_fd = init_server(LISTEN_PORT);
-	
-	while(1)
-	{
-		//接收连接
-		sock_fd = accept_client(listen_fd);
-		//创建子进程
-		if((pid = fork()) < 0)
-		{
-			perror("fork error");
-			exit(1);
-		}
-		else if(pid == 0)	//child process
-		{
-			close(listen_fd);
-			work_process(sock_fd);
-			close(sock_fd);
-			exit(0);
-		}
-		close(sock_fd);
-	}
-	close(listen_fd);
-	return 0;
-}
-
