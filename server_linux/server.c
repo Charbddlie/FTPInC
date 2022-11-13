@@ -23,28 +23,20 @@ int main()
 	{
 		//接收连接
 		sock_fd = accept_client(listen_fd);
-		work_process(sock_fd);
+		//创建子进程
+		if ((pid = fork()) < 0)
+		{
+			perror("fork error");
+			exit(1);
+		}
+		else if (pid == 0) // child process
+		{
+			close(listen_fd);
+			work_process(sock_fd);
+			close(sock_fd);
+			exit(0);
+		}
 		close(sock_fd);
-
-
-		// //接收连接
-		// sock_fd = accept_client(listen_fd);
-		// //创建子进程
-		// if ((pid = fork()) < 0)
-		// {
-		// 	perror("fork error");
-		// 	close(sock_fd);
-		// 	exit(1);
-		// }
-		// else if (pid == 0) // child process
-		// {
-		// 	close(listen_fd);
-		// 	work_process(sock_fd);
-		// 	close(sock_fd);
-		// 	exit(0);
-		// }
-		// // 接受到的连接交给子进程处理，父进程不用动
-		// // close(sock_fd);
 	}
 	close(listen_fd);
 	return 0;
@@ -55,7 +47,7 @@ void work_process(int sock_fd)
 	int work_fd;
 	char cmd[10], arg[MAX_SIZE];
 
-	send_response(sock_fd, 220);
+	send_response(sock_fd, CONN_SUCCESS);
 
 	int ret;
 	char loginOrRegist[MAX_SIZE];
@@ -108,16 +100,18 @@ void work_process(int sock_fd)
 	while (1)
 	{
 		//接收客户端的请求并解析
-		int ret_code = server_get_request(sock_fd, cmd, arg);
+		int ret_code = server_get_request(sock_fd, cmd, arg); //这个函数内部会返回给客户端对于指令的评价（是否可处理）
 		if ((ret_code < 0) || (ret_code == QUIT_SUCESS))
 			break;
 
 		if (ret_code == CMD_SUCCESS)
 		{
 			//创建与客户端的数据连接,之前的是监听连接
-			if ((work_fd = server_work_conn(sock_fd)) < 0)
+			work_fd = server_work_conn(sock_fd);
+			if (work_fd < 0)
 			{
 				close(sock_fd);
+				printf("work_fd创建失败");
 				exit(1);
 			}
 			//创建了数据连接之后,执行对应的命令即可
@@ -141,9 +135,13 @@ void work_process(int sock_fd)
 			{
 				server_cmd_delete(work_fd, sock_fd);
 			}
-			else if (strcmp(cmd, "RETR") == 0)
+			else if (strcmp(cmd, "GET") == 0)
 			{
-				server_cmd_retr(sock_fd, work_fd, arg);
+				server_cmd_get(sock_fd, work_fd, arg);
+			}
+			else if (strcmp(cmd, "PUT") == 0)
+			{
+				server_cmd_put(sock_fd, work_fd, arg);
 			}
 
 			close(work_fd);
@@ -297,7 +295,7 @@ int server_register(int sock_fd){
 			name[i] = temp[i];
 			i++;
 		}
-		name[i] = '\0';
+		// WORK_PORT = '\0';
 		if (strcmp(name, accountName) != 0) {
 			continue;
 		}
@@ -378,16 +376,17 @@ int server_get_request(int sock_fd, char *cmd, char *arg)
 		exit(1);
 	}
 
-	char *delim = " ";
-	cmd = strtok(buf, delim);
-	arg = strtok(NULL, delim);
-	printf("cmd: %s arg: %s", cmd, arg);
+	// strcpy(cmd, buf);
+	// // 下两行为原有代码，可能是用于处理quit指令的？
+	// char *temp = buf + 5;
+	// strcpy(arg, temp);
+	get_cmd_first_arg(buf, cmd, arg);
 
 	if(strcmp(cmd, "QUIT") == 0)
 	{
 		ret_code = QUIT_SUCESS;
 	}
-	else if((strcmp(cmd, "USER") == 0) || (strcmp(cmd, "PASS") == 0) || (strcmp(cmd, "LS") == 0) || (strcmp(cmd, "RETR") == 0) || (strcmp(cmd, "PWD") == 0) || (strcmp(cmd, "MKDIR") == 0) || (strcmp(cmd, "CD") == 0 )|| (strcmp(cmd, "DELETE") == 0 ))
+	else if((strcmp(cmd, "USER") == 0) || (strcmp(cmd, "PASS") == 0) || (strcmp(cmd, "LS") == 0) || (strcmp(cmd, "GET") == 0) || (strcmp(cmd, "PWD") == 0) || (strcmp(cmd, "MKDIR") == 0) || (strcmp(cmd, "CD") == 0 )|| (strcmp(cmd, "DELETE") == 0 ))
 	{
 		ret_code = CMD_SUCCESS;
 	}
@@ -427,7 +426,7 @@ int server_work_conn(int sock_fd)
 int server_cmd_ls(int work_fd, int sock_fd)
 {
 	//读取当前目录
-	send_response(sock_fd, 1);
+	send_response(sock_fd, SERVER_READY);
 	char data[MAX_SIZE];
 	char dir[MAX_SIZE];
 	//数组初始置0，否则可能会有奇怪的数据！
@@ -457,14 +456,14 @@ int server_cmd_ls(int work_fd, int sock_fd)
 	{
 		perror("send error");
 	}
-	send_response(sock_fd, GET_SUCCESS);
+	send_response(sock_fd, RET_SUCCESS);
 	return 0;
 }
 
 int server_cmd_pwd(int work_fd, int sock_fd)
 {
 	//打印当前所在目录
-	send_response(sock_fd, 1);
+	send_response(sock_fd, SERVER_READY);
 	char data[MAX_SIZE];
 	bzero(data, sizeof(data));
 	strcpy(data, current_dir);
@@ -472,14 +471,14 @@ int server_cmd_pwd(int work_fd, int sock_fd)
 	{
 		perror("send error");
 	}
-	send_response(sock_fd, GET_SUCCESS);
+	send_response(sock_fd, RET_SUCCESS);
 	return 0;
 }
 
 int server_cmd_mkdir(int work_fd, int sock_fd)
 {
 	//新建文件夹
-	send_response(sock_fd, 1);
+	send_response(sock_fd, SERVER_READY);
 	char new_dir[MAX_SIZE];
 	char get_dir[MAX_SIZE];
 	bzero(new_dir, sizeof(new_dir));
@@ -495,7 +494,7 @@ int server_cmd_mkdir(int work_fd, int sock_fd)
    		if(!isCreate)
    		{
 			printf("create path:%s\n",new_dir);
-			send_response(sock_fd, 1);
+			send_response(sock_fd, SERVER_READY);
 		}
    		else
    		{
@@ -511,7 +510,7 @@ int server_cmd_mkdir(int work_fd, int sock_fd)
 int server_cmd_cd(int work_fd, int sock_fd)
 {
 	//变更所在目录
-	send_response(sock_fd, 1);
+	send_response(sock_fd, SERVER_READY);
 	char new_path[MAX_SIZE];
 	char get_path[MAX_SIZE];
 	bzero(new_path, sizeof(new_path));
@@ -530,7 +529,7 @@ int server_cmd_cd(int work_fd, int sock_fd)
 			{
 				strcat(current_dir,get_path);
 				printf("change path to:%s\n", current_dir);
-				send_response(sock_fd, 1);
+				send_response(sock_fd, SERVER_READY);
 			}
 			else
 				send_response(sock_fd, 0);
@@ -543,7 +542,7 @@ int server_cmd_cd(int work_fd, int sock_fd)
 			{
 				strcpy(current_dir, get_path);
 				printf("change path to:%s\n", current_dir);
-				send_response(sock_fd, 1);
+				send_response(sock_fd, SERVER_READY);
 			}
 			else
 				send_response(sock_fd, 0);
@@ -557,7 +556,7 @@ int server_cmd_cd(int work_fd, int sock_fd)
 int server_cmd_delete(int work_fd, int sock_fd)
 {
 	//删除文件
-	send_response(sock_fd, 1);
+	send_response(sock_fd, SERVER_READY);
 	char delete_path[MAX_SIZE];
 	char file_name[MAX_SIZE];
 	bzero(delete_path, sizeof(delete_path));
@@ -573,7 +572,7 @@ int server_cmd_delete(int work_fd, int sock_fd)
 		{
 			remove(delete_path);
 			printf("delete %s\n", delete_path);
-			send_response(sock_fd, 1);
+			send_response(sock_fd, SERVER_READY);
 		}
 		else
 			send_response(sock_fd, 0);
@@ -583,27 +582,40 @@ int server_cmd_delete(int work_fd, int sock_fd)
 	return 0;
 }
 
-void server_cmd_retr(int sock_fd, int work_fd, char *file_name)
+void server_cmd_get(int sock_fd, int work_fd, char *file_name)
 {
+	static char filepath[MAX_SIZE] = {'\0'};
+	bzero(filepath, MAX_SIZE);
+	strcat(filepath, current_dir);
+	strcat(filepath, "/");
+	strcat(filepath, file_name);
+	//debug
+	printf("cur_dir: %s\n", current_dir);
+	printf("file_name: %s\n", file_name);
+	printf("%s",filepath);
+	exit(0);
 	//利用mmap映射,然后传送数据
-	int ret, file_size;
-	int fd = open(file_name, O_RDONLY);
-	if(fd < 0)
+	int ret,file_size;
+	int file = open(filepath, O_RDONLY);
+	if(file < 0)
 	{
-		send_response(sock_fd, 550);
+		send_response(sock_fd, FILE_UNVAIL);
 		perror("open file error");
 		exit(1);
 	}
-	send_response(sock_fd, 150);
+	send_response(sock_fd, SERVER_READY);
+
+	
 	struct stat s;
-	ret = fstat(fd, &s);
+	ret = fstat(file, &s);
 	if(ret < 0)
 	{
 		perror("fstat error");
 		exit(1);
 	}
 	file_size = s.st_size;
-	char* src = (char *)mmap(NULL, file_size, PROT_READ, MAP_SHARED, fd, 0);
+
+	char* src = (char *)mmap(NULL, file_size, PROT_READ, MAP_SHARED, file, 0);
 	if(src == MAP_FAILED)
 	{
 		perror("mmap src file error");
@@ -614,11 +626,17 @@ void server_cmd_retr(int sock_fd, int work_fd, char *file_name)
 		perror("send file error");
 		exit(1);
 	}
-	send_response(sock_fd, GET_SUCCESS);
+
+
+	send_response(sock_fd, RET_SUCCESS);
 	if((ret = munmap(src, file_size)) < 0)
 	{
 		perror("munmap error");
 		exit(1);
 	}
-	close(fd);
+	close(file);
+}
+
+void server_cmd_put(int sock_fd, int work_fd, char *file_name){
+
 }

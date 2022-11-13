@@ -131,5 +131,28 @@ int recv_data(int sock_fd, char* buf, int buf_size)
 	return n;
 }
 
-
-
+void get_cmd_first_arg(char *buf, char *cmd, char *arg)
+{
+	for (int i = 0; i < MAX_SIZE; i++)
+	{
+		if (buf[i] == ' ')
+		{
+			int j = i + 1;
+			while(buf[j] == ' ')
+				j++;
+			strcpy(arg, buf + j);
+			strncpy(cmd, buf, i);
+			cmd[i] = '\0';
+			break;
+		}
+		else if (buf[i] == '\0')
+		{
+			strcpy(cmd, buf);
+			arg = '\0';
+			break;
+		}
+	}
+	//debug
+	printf("buf: %s\n", buf);
+	printf("cmd: %s  arg: %s", cmd, arg);
+}

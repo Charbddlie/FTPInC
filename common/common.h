@@ -43,10 +43,11 @@
 #define REGIST_APPLICATION_OK   106
 
 #define CMD_SUCCESS 200
+#define SERVER_READY 210
 #define QUIT_SUCESS 221
-#define CMD_FAIL    502
 #define CONN_SUCCESS 220
-#define GET_SUCCESS 226
+#define RET_SUCCESS 226
+#define CMD_FAIL 502
 #define FILE_UNVAIL 550
 
 int init_server(int port);
@@ -55,4 +56,6 @@ int connect_server(int port, char *serv_ip);
 int send_response(int sock_fd, int ret_code);
 void read_input(char *buf, int size);
 int recv_data(int sock_fd, char *buf, int buf_size);
+//处理命令参数
+void get_cmd_first_arg(char *buf, char *cmd, char *arg);
 #endif

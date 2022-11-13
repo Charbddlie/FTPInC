@@ -33,9 +33,12 @@ int server_cmd_mkdir(int work_fd, int sock_fd);
 int server_cmd_cd(int work_fd, int sock_fd);
 //删除文件
 int server_cmd_delete(int work_fd, int sock_fd);
-//传输文件
-void server_cmd_retr(int sock_fd, int work_fd, char *file_name);
+//下载文件
+void server_cmd_get(int sock_fd, int work_fd, char *file_name);
+//上传文件
+void server_cmd_put(int sock_fd, int work_fd, char *file_name);
 //处理请求的进程
 void work_process(int sock_fd);
+
 #endif
 

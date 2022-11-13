@@ -13,13 +13,15 @@ int main(int argc, char *argv[])
 	int work_fd, ret_code, s;
 	char buf[MAX_SIZE], port[10], arg[100], code[5];
 	struct addrinfo hints, *result, *rp;
-	if (argc != 2)
-	{
-		printf("Please input client hostname\n");
-		exit(1);
-	}
+	// debug
+	// if (argc != 2)
+	// {
+	// 	printf("Please input client hostname\n");
+	// 	exit(1);
+	// }
 
-	char *host = argv[1];
+	// char *host = argv[1];
+	char host[] = "localhost";
 
 	//获取与主机名匹配的地址
 	bzero(&hints, sizeof(struct addrinfo));
@@ -87,6 +89,9 @@ int main(int argc, char *argv[])
 			printf("invalid command\n");
 			continue;
 		}
+		//debug
+		// printf("\n\nbuf: %s\n", buf);
+		// printf("cmd: %s  arg: %s", code, arg);
 
 		//发送命令到服务器
 		if (send(sock_fd, buf, (int)strlen(buf), 0) < 0)
@@ -108,7 +113,8 @@ int main(int argc, char *argv[])
 		else //命令是合法的
 		{
 			//打开数据连接
-			if ((work_fd = client_open_conn(sock_fd)) < 0)
+			work_fd = client_open_conn(sock_fd);
+			if (work_fd < 0)
 			{
 				perror("Error opening socket for data connection");
 				exit(1);
@@ -134,17 +140,27 @@ int main(int argc, char *argv[])
 			{
 				client_delete(work_fd, sock_fd);
 			}
-			else if (strcmp(code, "RETR") == 0)
+			else if (strcmp(code, "GET") == 0)
 			{
-				if (get_return_code() == 550)
+				if (get_return_code() == FILE_UNVAIL)
 				{
-					print_return_code(550);
-					close(work_fd);
+					print_return_code(FILE_UNVAIL);		
 					continue;
 				}
 				client_get(work_fd, arg);
 				print_return_code(get_return_code());
 			}
+			else if (strcmp(code, "PUT") == 0) // todo
+			{
+				if (get_return_code() == FILE_UNVAIL)
+				{
+					print_return_code(FILE_UNVAIL);
+					continue;
+				}
+				client_get(work_fd, arg);
+				print_return_code(get_return_code());
+			}
+			close(work_fd);
 		}
 	}
 	close(sock_fd);
@@ -166,16 +182,16 @@ void print_return_code(int rc)
 {
 	switch (rc)
 	{
-		case 220:
+		case CONN_SUCCESS:
 			printf("\n\nWelcome!!! Please login or register first to use the FTP system.\n");
 			break;
 		case QUIT_SUCESS:
 			printf("Good bye!\n");
 			break;
-		case GET_SUCCESS:
-			printf("Get file succeeded.\n");
+		case RET_SUCCESS:
+			printf("Return succeeded.\n");
 			break;
-		case 550:
+		case FILE_UNVAIL:
 			printf("File unavailable.\n");
 			break;
 	}
@@ -188,75 +204,61 @@ int client_read_command(char *buf, int size, char *arg, char *code)
 	printf("client> ");
 	fflush(stdout);
 	read_input(buf, size);
-	char *temp_arg = NULL;
-	temp_arg = strtok(buf, " ");
-	temp_arg = strtok(NULL, " ");
+	// char *temp_arg = NULL;
+	// temp_arg = strtok(buf, " ");
+	// temp_arg = strtok(NULL, " ");
 	
-	if(temp_arg != NULL)
-	{
-		strncpy(arg, temp_arg, strlen(temp_arg) + 1);
-	}
-	if(strcmp(buf, "ls") == 0 || strcmp(buf, "LS") == 0)
+	// if(temp_arg != NULL)
+	// {
+	// 	strncpy(arg, temp_arg, strlen(temp_arg) + 1);
+	// }
+	get_cmd_first_arg(buf, code, arg);
+	
+	if(strcmp(code, "ls") == 0 || strcmp(code, "LS") == 0)
 	{
 		strcpy(code, "LS");
 	}
-	else if(strcmp(buf, "pwd") == 0 || strcmp(buf, "PWD") == 0)
+	else if(strcmp(code, "pwd") == 0 || strcmp(code, "PWD") == 0)
 	{
 		strcpy(code, "PWD");
 	}
-	else if(strcmp(buf, "mkdir") == 0 || strcmp(buf, "MKDIR") == 0)
+	else if(strcmp(code, "mkdir") == 0 || strcmp(code, "MKDIR") == 0)
 	{
 		strcpy(code, "MKDIR");
 	}
-	else if(strcmp(buf, "cd") == 0 || strcmp(buf, "CD") == 0)
+	else if(strcmp(code, "cd") == 0 || strcmp(code, "CD") == 0)
 	{
 		strcpy(code, "CD");
 	}
-	else if(strcmp(buf, "delete") == 0 || strcmp(buf, "DELETE") == 0)
+	else if(strcmp(code, "delete") == 0 || strcmp(code, "DELETE") == 0)
 	{
 		strcpy(code, "DELETE");
 	}
-	else if(strcmp(buf, "get") == 0)
+	else if(strcmp(code, "get") == 0)
 	{
-		strcpy(code, "RETR");
+		strcpy(code, "GET");
 	}
-	else if(strcmp(buf, "quit") == 0)
+	else if (strcmp(code, "put") == 0)
+	{
+		strcpy(code, "PUT");
+	}
+	else if(strcmp(code, "quit") == 0)
 	{
 		strcpy(code, "QUIT");
 	}
 	else
 		return -1;
+
 	bzero(buf, sizeof(buf));
 	strcpy(buf, code);
+	strcat(buf, " ");
+	strncat(buf, arg, strlen(arg) + 1);
+	//debug
+	//printf("%s", buf);
 
-	if(temp_arg != NULL)
-	{
-		strcat(buf, " ");
-		strncat(buf, arg, strlen(arg) + 1);
-	}
-	
 	return 0;
 }
 
-int client_get(int work_fd, char *arg)
-{
-	char data[MAX_SIZE];
-	int size;
-	printf("filename:%s\n", arg);
-	FILE* fd = fopen(arg, "w");
-
-	//将服务器传来的数据写入本地建立的文件
-	while((size = recv(work_fd, data, MAX_SIZE, 0)) > 0)
-	{
-		fwrite(data, 1, size, fd);
-	}
-	if(size < 0)
-	{
-		perror("error\n");
-	}
-	fclose(fd);
-	return 0;
-}
 int client_open_conn(int sock_fd)
 {
 	int listen_fd = init_server(DATA_PORT);
@@ -271,15 +273,36 @@ int client_open_conn(int sock_fd)
 	return work_fd;
 }
 
+int client_get(int work_fd, char *arg)
+{
+	char data[MAX_SIZE];
+	int size;
+	printf("filename:%s\n", arg);
+	FILE *file = NULL;
 
-int client_ls(int work_fd, int sock_fd)
+	//将服务器传来的数据写入本地建立的文件
+	while ((size = recv(work_fd, data, MAX_SIZE, 0)) > 0)
+	{
+		if (!file)
+			file = fopen(arg, "w");
+		fwrite(data, 1, size, file);
+	}
+	if (size < 0)
+	{
+		perror("error\n");
+	}
+	fclose(file);
+	return 0;
+}
+
+int client_ls(int work_fd, int sock_fd) //以这个函数为例
 {
 	size_t n;
 	char buf[MAX_SIZE];
 	int temp = 0;
 	bzero(buf, sizeof(buf));
 	//等待服务器启动的信息
-	if((recv(sock_fd, &temp, sizeof(temp), 0)) < 0)
+	if((recv(sock_fd, &temp, sizeof(temp), 0)) < 0)//此处接受到SERVER_READY
 	{
 		perror("client: error reading message from server\n");
 		exit(1);
@@ -298,7 +321,7 @@ int client_ls(int work_fd, int sock_fd)
 	}
 
 	//等待服务器完成的消息
-	if(recv(sock_fd, &temp, sizeof(temp), 0) < 0)
+	if (recv(sock_fd, &temp, sizeof(temp), 0) < 0) //此处接受到RET_SUCCESS
 	{
 		perror("client:error reading message from server\n");
 		exit(1);
@@ -374,7 +397,7 @@ int client_mkdir(int work_fd,int sock_fd)
 	}
 
 	//等待服务器完成的消息
-	if(recv(sock_fd, &success, sizeof(success), 0)<0)
+	if(recv(sock_fd, &success, sizeof(success), 0) < 0)
 	{
 		perror("client: error reading message from server\n");
 		exit(1);
@@ -642,9 +665,3 @@ void client_register() {
 		return;
 	}
 }
-
-
-
-
-
-

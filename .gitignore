@@ -2,6 +2,14 @@
 .vs
 client/Debug
 server/Debug
+
+# output 
+server_linux/server
+client_linux/client
+
+#garbage
+*.fuse_hidden*
+
 # Prerequisites
 *.d
 
@@ -54,5 +62,3 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
-server_linux/server
-client_linux/client
