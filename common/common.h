@@ -54,11 +54,19 @@
 int init_server(int port);
 int accept_client(int sock_fd);
 int connect_server(int port, char *serv_ip);
-int send_response(int sock_fd, int ret_code);
+int send_num(int sock_fd, int ret_code);
 void read_input(char *buf, int size);
 int recv_data(int sock_fd, char *buf, int buf_size);
+
+//获得相应码
+int get_return_code(int sock_fd);
+
 //处理命令参数
 void get_cmd_first_arg(char *buf, char *cmd, char *arg);
+
+// 以下函数都当作bool用，出错返回0，直接用if就能判断
 //处理文件路径
 int file_name_valid(char *arg, int size);
+int send_file(int work_fd, int sock_fd, char *file_path);
+int get_file(int work_fd, int sock_fd, char *filepath);
 #endif

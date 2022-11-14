@@ -10,6 +10,10 @@ client_linux/client
 #garbage
 *.fuse_hidden*
 
+#temp
+temp
+temp/*
+
 # Prerequisites
 *.d
 
@@ -62,3 +66,4 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+

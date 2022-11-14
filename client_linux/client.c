@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 
 	//连接成功
 	printf("Connected to %s\n", host);
-	print_return_code(get_return_code());
+	print_return_code(get_return_code(sock_fd));
 	char choice[5];
 	while (1)
 	{
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 
-		ret_code = get_return_code(); //读取服务器响应
+		ret_code = get_return_code(sock_fd); //读取服务器响应
 		if (ret_code == QUIT_SUCESS)
 		{
 			print_return_code(QUIT_SUCESS);
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 		}
 		if (ret_code == CMD_FAIL)
 		{
-			printf("%d invalid command.\n", ret_code);
+			printf("%s invalid command.\n", code);
 		}
 		else //命令是合法的
 		{
@@ -143,34 +143,16 @@ int main(int argc, char *argv[])
 			else if (strcmp(code, "GET") == 0)
 			{
 				client_get(work_fd, arg);
-				// print_return_code(get_return_code());
 			}
-			// else if (strcmp(code, "PUT") == 0) // todo
-			// {
-			// 	if (get_return_code() == FILE_UNVAIL)
-			// 	{
-			// 		print_return_code(FILE_UNVAIL);
-			// 		continue;
-			// 	}
-			// 	client_get(work_fd, arg);
-			// 	print_return_code(get_return_code());
-			// }
+			else if (strcmp(code, "PUT") == 0)
+			{
+				client_put(work_fd, arg);
+			}
 			close(work_fd);
 		}
 	}
 	close(sock_fd);
 	return 0;
-}
-
-int get_return_code()
-{
-	int ret_code = 0;
-	if (recv(sock_fd, &ret_code, sizeof(ret_code), 0) < 0) 
-	{
-		perror("client: error reading message from server\n");
-		return -1;
-	}	
-	return ntohl(ret_code);
 }
 
 void print_return_code(int rc) 
@@ -191,6 +173,7 @@ void print_return_code(int rc)
 			break;
 	}
 }
+
 int client_read_command(char *buf, int size, char *arg, char *code)
 {
 	bzero(arg, sizeof(arg));
@@ -279,49 +262,32 @@ int client_open_conn(int sock_fd)
 
 int client_get(int work_fd, char *file_name)
 {
-	// debug
-	int code;
-	char data[MAX_SIZE];
-	printf("filename:%s\n", file_name);
+	static char filepath[MAX_SIZE] = {'\0'};
+	bzero(filepath, MAX_SIZE);
+	strcat(filepath, FILE_DIR);
+	strcat(filepath, file_name);
 
-	//等待服务器启动的信息
-	code = get_return_code(); //此处接受到SERVER_READY
-	//debug
-	printf("SERVER_READY处:%d\n", code);
+	get_return_code(sock_fd); //此处接受到SERVER_READY
 
-	if (get_return_code() == FILE_UNVAIL)
-	{
-		printf("获取文件失败");
-	}
+	get_file(work_fd, sock_fd, filepath);
 
-	int get_num = get_return_code();//文件传输次数
-	// printf("接受到文件传输总次数:%d\n", get_num);
-	FILE *file = fopen(file_name, "w");
-	int size;
-	for (int i = 0; i < get_num; i++){
-		// printf("正在进行第%d次接收...\n", i + 1);
-		size = recv(work_fd, data, sizeof(data), 0);
-		if (size < 0)
-		{
-			perror("reading file data error\n");
-			return -1;
-		}
-		// printf("接受到内容: %s\n", data);
-		fwrite(data, 1, size, file);
-	}
+	get_return_code(sock_fd); //此处接收RET_SUCCESS
 
-	get_return_code(); //此处接收RET_SUCCESS
-	//将服务器传来的数据写入本地建立的文件
-	// while ((size = recv(work_fd, data, MAX_SIZE, 0)) > 0)
-	// {
+	return 0;
+}
 
-	// 	fwrite(data, 1, size, file);
-	// }
-	// if (size < 0)
-	// {
-	// 	perror("error\n");
-	// }
-	fclose(file);
+int client_put(int work_fd, char *file_name){
+	static char filepath[MAX_SIZE] = {'\0'};
+	bzero(filepath, MAX_SIZE);
+	strcat(filepath, FILE_DIR);
+	strcat(filepath, file_name);
+
+	get_return_code(sock_fd); //此处接受到SERVER_READY
+
+	send_file(work_fd, sock_fd, filepath);
+
+	get_return_code(sock_fd); //此处接收RET_SUCCESS
+
 	return 0;
 }
 
@@ -583,7 +549,7 @@ void client_login()
 		client_send_cmd(arg, code);
 
 		//等待响应
-		ret_code = get_return_code();
+		ret_code = get_return_code(sock_fd);
 		if(ret_code==LOGIN_SUCCESS){
 			printf("Login succeed!\n");
 			break;
@@ -617,7 +583,7 @@ void client_register() {
 		}
 		else {
 			client_send_cmd(accountName, "USER");
-			ret_code=get_return_code();
+			ret_code=get_return_code(sock_fd);
 			if(ret_code==REGIST_NAME_REPEAT){
 				printf("Your name has existed! Please change one!\n");
 				send(sock_fd, "REGISTER", (int)strlen("REGISTER"), 0);
@@ -629,7 +595,7 @@ void client_register() {
 		}
 	}
 	printf("Your application has been sent, wait a moment for manager to check！\n");
-	ret_code = get_return_code();
+	ret_code = get_return_code(sock_fd);
 	if (ret_code==REGIST_APPLICATION_OK) {
 		printf("Your application has passed！ \n");
 	}
@@ -682,7 +648,7 @@ void client_register() {
 		else break;
 	}
 	client_send_cmd(accountPassword, "PASS");
-	ret_code=get_return_code();
+	ret_code=get_return_code(sock_fd);
 	if (ret_code==REGIST_SUCCESS) {
 		printf("Register successfully！ Please login!\n");
 		send(sock_fd, "LOGIN", (int)strlen("LOGIN"), 0);

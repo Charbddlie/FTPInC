@@ -47,7 +47,7 @@ void work_process(int sock_fd)
 	int work_fd;
 	char cmd[10], arg[MAX_SIZE];
 
-	send_response(sock_fd, CONN_SUCCESS);
+	send_num(sock_fd, CONN_SUCCESS);
 
 	int ret;
 	char loginOrRegist[MAX_SIZE];
@@ -66,16 +66,16 @@ void work_process(int sock_fd)
 			ret = server_register(sock_fd);
 			if (ret == REGIST_NAME_REPEAT)
 			{
-				send_response(sock_fd, REGIST_NAME_REPEAT);
+				send_num(sock_fd, REGIST_NAME_REPEAT);
 				continue;
 			}
 			if (ret == 0)
 			{
-				send_response(sock_fd, REGIST_REFUSED);
+				send_num(sock_fd, REGIST_REFUSED);
 			}
 			else
 			{
-				send_response(sock_fd, REGIST_SUCCESS);
+				send_num(sock_fd, REGIST_SUCCESS);
 			}
 			continue;
 		}
@@ -85,12 +85,12 @@ void work_process(int sock_fd)
 			//认证失败
 			if (ret != 1)
 			{
-				send_response(sock_fd, LOGIN_FAILED);
+				send_num(sock_fd, LOGIN_FAILED);
 				continue;
 			}
 			else
 			{
-				send_response(sock_fd, LOGIN_SUCCESS);
+				send_num(sock_fd, LOGIN_SUCCESS);
 				break;
 			}
 		}
@@ -137,11 +137,11 @@ void work_process(int sock_fd)
 			}
 			else if (strcmp(cmd, "GET") == 0)
 			{
-				server_cmd_get(sock_fd, work_fd, arg);
+				server_cmd_get(work_fd, sock_fd, arg);
 			}
 			else if (strcmp(cmd, "PUT") == 0)
 			{
-				server_cmd_put(sock_fd, work_fd, arg);
+				server_cmd_put(work_fd, sock_fd, arg);
 			}
 
 			close(work_fd);
@@ -253,7 +253,7 @@ int manager_check(int sock_fd,char* accountName,char *au){
 					printf("Illegal input!\n");
 				}
 			}
-			send_response(sock_fd, REGIST_APPLICATION_OK);
+			send_num(sock_fd, REGIST_APPLICATION_OK);
 			return 1;
 		}
 		if (getAnswer[0] == 'n' || getAnswer[0] == 'N') {
@@ -309,7 +309,7 @@ int server_register(int sock_fd){
 		return REGIST_NAME_REPEAT;
 	}
 	if(result==1){
-		send_response(sock_fd, REGIST_NAME_OK);
+		send_num(sock_fd, REGIST_NAME_OK);
 		char au[5];
 		ret=manager_check(sock_fd,accountName,au);
 		if(ret==0) return 0;
@@ -342,7 +342,7 @@ int server_login(int sock_fd)
 		user[n++] = buf[i++];
 	}
 	//通知输入密码
-	send_response(sock_fd, 331);
+	send_num(sock_fd, 331);
 
 	//获取客户端传来的密码
 	bzero(buf, sizeof(buf));
@@ -386,7 +386,7 @@ int server_get_request(int sock_fd, char *cmd, char *arg)
 	{
 		ret_code = QUIT_SUCESS;
 	}
-	else if((strcmp(cmd, "USER") == 0) || (strcmp(cmd, "PASS") == 0) || (strcmp(cmd, "LS") == 0) || (strcmp(cmd, "GET") == 0) || (strcmp(cmd, "PWD") == 0) || (strcmp(cmd, "MKDIR") == 0) || (strcmp(cmd, "CD") == 0 )|| (strcmp(cmd, "DELETE") == 0 ))
+	else if ((strcmp(cmd, "USER") == 0) || (strcmp(cmd, "PASS") == 0) || (strcmp(cmd, "LS") == 0) || (strcmp(cmd, "GET") == 0) || (strcmp(cmd, "PUT") == 0) || (strcmp(cmd, "PWD") == 0) || (strcmp(cmd, "MKDIR") == 0) || (strcmp(cmd, "CD") == 0) || (strcmp(cmd, "DELETE") == 0))
 	{
 		ret_code = CMD_SUCCESS;
 	}
@@ -395,7 +395,7 @@ int server_get_request(int sock_fd, char *cmd, char *arg)
 		printf("cmd:%s\n",cmd);
 		ret_code = CMD_FAIL;
 	}
-	send_response(sock_fd, ret_code);
+	send_num(sock_fd, ret_code);
 	return ret_code;
 }
 
@@ -426,7 +426,7 @@ int server_work_conn(int sock_fd)
 int server_cmd_ls(int work_fd, int sock_fd)
 {
 	//读取当前目录
-	send_response(sock_fd, SERVER_READY);
+	send_num(sock_fd, SERVER_READY);
 	char data[MAX_SIZE];
 	char dir[MAX_SIZE];
 	//数组初始置0，否则可能会有奇怪的数据！
@@ -456,14 +456,14 @@ int server_cmd_ls(int work_fd, int sock_fd)
 	{
 		perror("send error");
 	}
-	send_response(sock_fd, RET_SUCCESS);
+	send_num(sock_fd, RET_SUCCESS);
 	return 0;
 }
 
 int server_cmd_pwd(int work_fd, int sock_fd)
 {
 	//打印当前所在目录
-	send_response(sock_fd, SERVER_READY);
+	send_num(sock_fd, SERVER_READY);
 	char data[MAX_SIZE];
 	bzero(data, sizeof(data));
 	strcpy(data, current_dir);
@@ -471,14 +471,14 @@ int server_cmd_pwd(int work_fd, int sock_fd)
 	{
 		perror("send error");
 	}
-	send_response(sock_fd, RET_SUCCESS);
+	send_num(sock_fd, RET_SUCCESS);
 	return 0;
 }
 
 int server_cmd_mkdir(int work_fd, int sock_fd)
 {
 	//新建文件夹
-	send_response(sock_fd, SERVER_READY);
+	send_num(sock_fd, SERVER_READY);
 	char new_dir[MAX_SIZE];
 	char get_dir[MAX_SIZE];
 	bzero(new_dir, sizeof(new_dir));
@@ -494,23 +494,23 @@ int server_cmd_mkdir(int work_fd, int sock_fd)
    		if(!isCreate)
    		{
 			printf("create path:%s\n",new_dir);
-			send_response(sock_fd, SERVER_READY);
+			send_num(sock_fd, SERVER_READY);
 		}
    		else
    		{
 			printf("create path:%s failed! error code : %d \n", new_dir, isCreate);
-			send_response(sock_fd, 0);
+			send_num(sock_fd, 0);
 		}
 	}
 	else
-		send_response(sock_fd, 0);
+		send_num(sock_fd, 0);
 	return 0;
 }
 
 int server_cmd_cd(int work_fd, int sock_fd)
 {
 	//变更所在目录
-	send_response(sock_fd, SERVER_READY);
+	send_num(sock_fd, SERVER_READY);
 	char new_path[MAX_SIZE];
 	char get_path[MAX_SIZE];
 	bzero(new_path, sizeof(new_path));
@@ -529,10 +529,10 @@ int server_cmd_cd(int work_fd, int sock_fd)
 			{
 				strcat(current_dir,get_path);
 				printf("change path to:%s\n", current_dir);
-				send_response(sock_fd, SERVER_READY);
+				send_num(sock_fd, SERVER_READY);
 			}
 			else
-				send_response(sock_fd, 0);
+				send_num(sock_fd, 0);
 		}
 		else
 		{
@@ -542,21 +542,21 @@ int server_cmd_cd(int work_fd, int sock_fd)
 			{
 				strcpy(current_dir, get_path);
 				printf("change path to:%s\n", current_dir);
-				send_response(sock_fd, SERVER_READY);
+				send_num(sock_fd, SERVER_READY);
 			}
 			else
-				send_response(sock_fd, 0);
+				send_num(sock_fd, 0);
 		}
 	}
 	else
-		send_response(sock_fd, -1);
+		send_num(sock_fd, -1);
 	return 0;
 }
 
 int server_cmd_delete(int work_fd, int sock_fd)
 {
 	//删除文件
-	send_response(sock_fd, SERVER_READY);
+	send_num(sock_fd, SERVER_READY);
 	char delete_path[MAX_SIZE];
 	char file_name[MAX_SIZE];
 	bzero(delete_path, sizeof(delete_path));
@@ -572,86 +572,50 @@ int server_cmd_delete(int work_fd, int sock_fd)
 		{
 			remove(delete_path);
 			printf("delete %s\n", delete_path);
-			send_response(sock_fd, SERVER_READY);
+			send_num(sock_fd, SERVER_READY);
 		}
 		else
-			send_response(sock_fd, 0);
+			send_num(sock_fd, 0);
 	}
 	else
-		send_response(sock_fd, -1);
+		send_num(sock_fd, -1);
 	return 0;
 }
 
-void server_cmd_get(int sock_fd, int work_fd, char *file_name)
+void server_cmd_get(int work_fd, int sock_fd, char *file_name)
 {
+	send_num(sock_fd, SERVER_READY);
+
 	static char filepath[MAX_SIZE] = {'\0'};
 	bzero(filepath, MAX_SIZE);
 	strcat(filepath, "..");
 	strcat(filepath, current_dir);
 	strcat(filepath, "/");
 	strcat(filepath, file_name);
-	
-	
+
+	send_file(work_fd, sock_fd, filepath);
+
 	//debug++++++++++++++++++++++==
-	printf("cur_dir: %s\n", current_dir);
-	printf("file_name: %s\n", file_name);
-	printf("%s\n",filepath);
+	// printf("cur_dir: %s\n", current_dir);
+	// printf("file_name: %s\n", file_name);
 	// exit(0);
 	//debug+++++++++++++++++++++++++
 
-	FILE *file = fopen(filepath, "r");
-	if(file == NULL){
-		send_response(sock_fd, FILE_UNVAIL);
-		perror("open file error");
-		return;
-	}else{
-		send_response(sock_fd, FILE_VAIL);
-	}
-	send_response(sock_fd, SERVER_READY);
-
-	//返回传输总次数
-	struct stat s;
-	int fd = open(filepath, O_RDWR);
-	if (fstat(fd, &s) < 0)
-	{
-		perror("fstat error");
-		return;
-	}
-	close(fd);
-	printf("服务器get_num: %ld\n", (s.st_size / MAX_SIZE + 1));
-	//debug
-	// exit(0);
-	send_response(sock_fd, s.st_size/MAX_SIZE + 1);
-
-	//正式开始传输
-	char buf[MAX_SIZE];
-	int send_time = 0;
-	int size;
-	while(!feof(file)){
-		bzero(buf, sizeof(buf));
-		printf("正在进行第%d次发送...\n", ++send_time);
-		size = fread(buf, 1, MAX_SIZE, file);
-		printf("读取内容: %s\n", buf);
-		printf("读取长度: %d\n", size);
-		send(work_fd, buf, size, 0);
-	}
-	fclose(file);
-
-	// char* src = (char *)mmap(NULL, file_size, PROT_READ, MAP_SHARED, file, 0);
-	// if(src == MAP_FAILED)
-	// {
-	// 	perror("mmap src file error");
-	// 	exit(1);
-	// }
-	// if((ret = send(work_fd, src, file_size, 0)) < 0)
-	// {
-	// 	perror("send file error");
-	// 	exit(1);
-	// }
-
-	send_response(sock_fd, RET_SUCCESS);
+	send_num(sock_fd, RET_SUCCESS);
 }
 
-void server_cmd_put(int sock_fd, int work_fd, char *file_name){
+void server_cmd_put(int work_fd, int sock_fd, char *file_name)
+{
+	send_num(sock_fd, SERVER_READY);
 
+	static char filepath[MAX_SIZE] = {'\0'};
+	bzero(filepath, MAX_SIZE);
+	strcat(filepath, "..");
+	strcat(filepath, current_dir);
+	strcat(filepath, "/");
+	strcat(filepath, file_name);
+
+	get_file(work_fd, sock_fd, filepath);
+
+	send_num(sock_fd, RET_SUCCESS);
 }

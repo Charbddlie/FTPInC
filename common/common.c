@@ -93,7 +93,7 @@ int connect_server(int serv_port, char *serv_ip)
 	return sock_fd;
 }
 
-int send_response(int sock_fd, int ret_code)
+int send_num(int sock_fd, int ret_code)
 {
 	int conv = htonl(ret_code);
 	if(send(sock_fd, &conv, sizeof(conv), 0) < 0)
@@ -177,4 +177,88 @@ int file_name_valid(char* arg, int size){
 		}
 	}
 	return 1;
+}
+
+int send_file(int work_fd, int sock_fd, char *filepath){
+	printf("正在发送文件：%s\n", filepath);
+	FILE *file = fopen(filepath, "r");
+	if (file == NULL)
+	{
+		send_num(sock_fd, FILE_UNVAIL);
+		perror("open file error");
+		return 0;
+	}
+	else
+	{
+		send_num(sock_fd, FILE_VAIL);
+	}
+
+	//返回传输总次数
+	struct stat s;
+	int fd = open(filepath, O_RDWR);
+	if (fstat(fd, &s) < 0)
+	{
+		perror("fstat error");
+		return 0;
+	}
+	close(fd);
+	// printf("服务器get_num: %ld\n", (s.st_size / MAX_SIZE + 1));
+	// debug
+	// exit(0);
+	send_num(sock_fd, s.st_size / MAX_SIZE + 1);
+
+	//正式开始传输
+	char buf[MAX_SIZE];
+	int send_time = 0;
+	int size;
+	while (!feof(file))
+	{
+		bzero(buf, sizeof(buf));
+		printf("正在进行第%d条发送...\n", ++send_time);
+		size = fread(buf, 1, MAX_SIZE, file);
+		// printf("读取内容: %s\n", buf);
+		// printf("读取长度: %d\n", size);
+		send(work_fd, buf, size, 0);
+	}
+	fclose(file);
+	return 1;
+}
+
+int get_file(int work_fd, int sock_fd, char *filepath){
+	if (get_return_code(sock_fd) == FILE_UNVAIL)
+	{
+		printf("获取文件失败");
+		return 0;
+	}
+
+	int get_num = get_return_code(sock_fd); //文件传输次数
+	// printf("接受到文件传输总次数:%d\n", get_num);
+	FILE *file = fopen(filepath, "w");
+	int size;
+	char data[MAX_SIZE];
+	for (int i = 0; i < get_num; i++)
+	{
+		// printf("正在进行第%d次接收...\n", i + 1);
+		size = recv(work_fd, data, sizeof(data), 0);
+		if (size < 0)
+		{
+			perror("reading file data error\n");
+			return 0;
+		}
+		// printf("接受到内容: %s\n", data);
+		fwrite(data, 1, size, file);
+	}
+	fclose(file);
+	return 1;
+}
+
+int get_return_code(int sock_fd)
+{
+	int ret_code = 0;
+	if (recv(sock_fd, &ret_code, sizeof(ret_code), 0) < 0)
+	{
+		perror("client: error reading message from server\n");
+		return -1;
+	}
+	return ntohl(ret_code);
 }
