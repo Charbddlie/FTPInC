@@ -95,13 +95,12 @@ int connect_server(int serv_port, char *serv_ip)
 
 int send_response(int sock_fd, int ret_code)
 {
-	int ret, conv = htonl(ret_code);
-	if((ret = send(sock_fd, &conv, sizeof(conv), 0)) < 0)
+	int conv = htonl(ret_code);
+	if(send(sock_fd, &conv, sizeof(conv), 0) < 0)
 	{
-		perror("send error:");
-		exit(1);
+		perror("send ret_code error!");
+		return -1;
 	}
-
 	return 0;
 }
 
@@ -153,6 +152,29 @@ void get_cmd_first_arg(char *buf, char *cmd, char *arg)
 		}
 	}
 	//debug
-	printf("buf: %s\n", buf);
-	printf("cmd: %s  arg: %s", cmd, arg);
+	// printf("buf: %s\n", buf);
+	// printf("cmd: %s  arg: %s\n", cmd, arg);
+}
+
+int file_name_valid(char* arg, int size){
+	int dot = 0;
+	for (int i = 0; i < size; i++)
+	{
+		if (arg[i] == '.')
+		{
+			if (dot == 0)
+				dot = 1;
+			else
+			{
+				printf("文件路径不能回溯(包含..)\n");
+				return 0;
+			}
+		}
+		else
+		{
+			if (dot == 1)
+				dot = 0;
+		}
+	}
+	return 1;
 }

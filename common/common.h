@@ -44,6 +44,7 @@
 
 #define CMD_SUCCESS 200
 #define SERVER_READY 210
+#define FILE_VAIL   222
 #define QUIT_SUCESS 221
 #define CONN_SUCCESS 220
 #define RET_SUCCESS 226
@@ -58,4 +59,6 @@ void read_input(char *buf, int size);
 int recv_data(int sock_fd, char *buf, int buf_size);
 //处理命令参数
 void get_cmd_first_arg(char *buf, char *cmd, char *arg);
+//处理文件路径
+int file_name_valid(char *arg, int size);
 #endif

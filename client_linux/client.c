@@ -142,24 +142,19 @@ int main(int argc, char *argv[])
 			}
 			else if (strcmp(code, "GET") == 0)
 			{
-				if (get_return_code() == FILE_UNVAIL)
-				{
-					print_return_code(FILE_UNVAIL);		
-					continue;
-				}
 				client_get(work_fd, arg);
-				print_return_code(get_return_code());
+				// print_return_code(get_return_code());
 			}
-			else if (strcmp(code, "PUT") == 0) // todo
-			{
-				if (get_return_code() == FILE_UNVAIL)
-				{
-					print_return_code(FILE_UNVAIL);
-					continue;
-				}
-				client_get(work_fd, arg);
-				print_return_code(get_return_code());
-			}
+			// else if (strcmp(code, "PUT") == 0) // todo
+			// {
+			// 	if (get_return_code() == FILE_UNVAIL)
+			// 	{
+			// 		print_return_code(FILE_UNVAIL);
+			// 		continue;
+			// 	}
+			// 	client_get(work_fd, arg);
+			// 	print_return_code(get_return_code());
+			// }
 			close(work_fd);
 		}
 	}
@@ -177,7 +172,7 @@ int get_return_code()
 	}	
 	return ntohl(ret_code);
 }
-	
+
 void print_return_code(int rc) 
 {
 	switch (rc)
@@ -203,7 +198,11 @@ int client_read_command(char *buf, int size, char *arg, char *code)
 
 	printf("client> ");
 	fflush(stdout);
+	setbuf(stdin, NULL);
 	read_input(buf, size);
+	//debug
+	printf("buf: %s", buf);
+
 	// char *temp_arg = NULL;
 	// temp_arg = strtok(buf, " ");
 	// temp_arg = strtok(NULL, " ");
@@ -237,10 +236,14 @@ int client_read_command(char *buf, int size, char *arg, char *code)
 	else if(strcmp(code, "get") == 0)
 	{
 		strcpy(code, "GET");
+		if (!file_name_valid(arg, sizeof(arg)))
+			return -1;
 	}
 	else if (strcmp(code, "put") == 0)
 	{
 		strcpy(code, "PUT");
+		if (!file_name_valid(arg, sizeof(arg)))
+			return -1;
 	}
 	else if(strcmp(code, "quit") == 0)
 	{
@@ -248,6 +251,7 @@ int client_read_command(char *buf, int size, char *arg, char *code)
 	}
 	else
 		return -1;
+
 
 	bzero(buf, sizeof(buf));
 	strcpy(buf, code);
@@ -273,24 +277,50 @@ int client_open_conn(int sock_fd)
 	return work_fd;
 }
 
-int client_get(int work_fd, char *arg)
+int client_get(int work_fd, char *file_name)
 {
+	// debug
+	int code;
 	char data[MAX_SIZE];
-	int size;
-	printf("filename:%s\n", arg);
-	FILE *file = NULL;
+	printf("filename:%s\n", file_name);
 
-	//将服务器传来的数据写入本地建立的文件
-	while ((size = recv(work_fd, data, MAX_SIZE, 0)) > 0)
+	//等待服务器启动的信息
+	code = get_return_code(); //此处接受到SERVER_READY
+	//debug
+	printf("SERVER_READY处:%d\n", code);
+
+	if (get_return_code() == FILE_UNVAIL)
 	{
-		if (!file)
-			file = fopen(arg, "w");
+		printf("获取文件失败");
+	}
+
+	int get_num = get_return_code();//文件传输次数
+	// printf("接受到文件传输总次数:%d\n", get_num);
+	FILE *file = fopen(file_name, "w");
+	int size;
+	for (int i = 0; i < get_num; i++){
+		// printf("正在进行第%d次接收...\n", i + 1);
+		size = recv(work_fd, data, sizeof(data), 0);
+		if (size < 0)
+		{
+			perror("reading file data error\n");
+			return -1;
+		}
+		// printf("接受到内容: %s\n", data);
 		fwrite(data, 1, size, file);
 	}
-	if (size < 0)
-	{
-		perror("error\n");
-	}
+
+	get_return_code(); //此处接收RET_SUCCESS
+	//将服务器传来的数据写入本地建立的文件
+	// while ((size = recv(work_fd, data, MAX_SIZE, 0)) > 0)
+	// {
+
+	// 	fwrite(data, 1, size, file);
+	// }
+	// if (size < 0)
+	// {
+	// 	perror("error\n");
+	// }
 	fclose(file);
 	return 0;
 }
@@ -599,7 +629,7 @@ void client_register() {
 		}
 	}
 	printf("Your application has been sent, wait a moment for manager to check！\n");
-	ret_code=get_return_code();
+	ret_code = get_return_code();
 	if (ret_code==REGIST_APPLICATION_OK) {
 		printf("Your application has passed！ \n");
 	}
