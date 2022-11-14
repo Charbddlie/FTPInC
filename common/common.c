@@ -1,8 +1,8 @@
 /*************************************************************************
-    > File Name: common.c
-    > Author: Ukey
-    > Mail: gsl110809@gmail.com
-    > Created Time: 2017年05月25日 星期四 14时58分33秒
+	> File Name: common.c
+	> Author: Ukey
+	> Mail: gsl110809@gmail.com
+	> Created Time: 2017年05月25日 星期四 14时58分33秒
  ************************************************************************/
 
 #include "common.h"
@@ -13,7 +13,7 @@ int init_server(int port)
 	struct sockaddr_in serv_addr;
 
 	//创建套接字
-	if((listen_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	if ((listen_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
 		perror("create socket error:");
 		exit(1);
@@ -22,7 +22,7 @@ int init_server(int port)
 	//设置端口复用
 	int flag = 1;
 	ret = setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
-	if((ret) < 0)
+	if ((ret) < 0)
 	{
 		close(listen_fd);
 		perror("set port reuse error:");
@@ -35,13 +35,13 @@ int init_server(int port)
 	serv_addr.sin_port = htons(port);
 	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	if((ret = bind(listen_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr))) < 0)
+	if ((ret = bind(listen_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr))) < 0)
 	{
 		close(listen_fd);
 		perror("bind error:");
 		exit(1);
 	}
-	
+
 	//将套接字设为监听状态
 	if ((ret = listen(listen_fd, port)) < 0)
 	{
@@ -57,14 +57,14 @@ int accept_client(int listen_fd)
 	int sock_fd;
 	struct sockaddr_in client_addr;
 	socklen_t len = sizeof(client_addr);
-	
+
 	sock_fd = accept(listen_fd, (struct sockaddr *)&client_addr, &len);
-	if(sock_fd < 0)
+	if (sock_fd < 0)
 	{
 		perror("accept error");
 		exit(1);
 	}
-	printf("accept connect from IP:%s PORT:%d,sock_fd=%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port), sock_fd);
+	// printf("accept connect from IP:%s PORT:%d,sock_fd=%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port), sock_fd);
 	return sock_fd;
 }
 
@@ -73,7 +73,7 @@ int connect_server(int serv_port, char *serv_ip)
 	int sock_fd, ret;
 	struct sockaddr_in serv_addr;
 
-	if((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
 		perror("socket error:");
 		exit(1);
@@ -84,7 +84,7 @@ int connect_server(int serv_port, char *serv_ip)
 	serv_addr.sin_port = htons(serv_port);
 	serv_addr.sin_addr.s_addr = inet_addr(serv_ip);
 
-	if((ret = connect(sock_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0)
+	if ((ret = connect(sock_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr))) < 0)
 	{
 		perror("error connect:");
 		exit(1);
@@ -96,7 +96,7 @@ int connect_server(int serv_port, char *serv_ip)
 int send_num(int sock_fd, int ret_code)
 {
 	int conv = htonl(ret_code);
-	if(send(sock_fd, &conv, sizeof(conv), 0) < 0)
+	if (send(sock_fd, &conv, sizeof(conv), 0) < 0)
 	{
 		perror("send ret_code error!");
 		return -1;
@@ -104,25 +104,25 @@ int send_num(int sock_fd, int ret_code)
 	return 0;
 }
 
-void read_input(char* buf, int size)
+void read_input(char *buf, int size)
 {
 	char *temp = NULL;
 	bzero(buf, size);
-	if(fgets(buf, size, stdin))
+	if (fgets(buf, size, stdin))
 	{
 		temp = strchr(buf, '\n');
-		if(temp)
+		if (temp)
 		{
 			*temp = '\0';
 		}
 	}
 }
-int recv_data(int sock_fd, char* buf, int buf_size)
+int recv_data(int sock_fd, char *buf, int buf_size)
 {
 	size_t n;
 	bzero(buf, sizeof(buf));
 
-	if((n = recv(sock_fd, buf, buf_size, 0)) < 0)
+	if ((n = recv(sock_fd, buf, buf_size, 0)) < 0)
 	{
 		perror("recv error");
 		exit(1);
@@ -137,7 +137,7 @@ void get_cmd_first_arg(char *buf, char *cmd, char *arg)
 		if (buf[i] == ' ')
 		{
 			int j = i + 1;
-			while(buf[j] == ' ')
+			while (buf[j] == ' ')
 				j++;
 			strcpy(arg, buf + j);
 			strncpy(cmd, buf, i);
@@ -151,45 +151,43 @@ void get_cmd_first_arg(char *buf, char *cmd, char *arg)
 			break;
 		}
 	}
-	//debug
-	// printf("buf: %s\n", buf);
-	// printf("cmd: %s  arg: %s\n", cmd, arg);
+	// debug
+	//  printf("buf: %s\n", buf);
+	//  printf("cmd: %s  arg: %s\n", cmd, arg);
 }
 
-int file_name_valid(char* arg, int size){
+int file_name_valid(char *arg, int size)
+{
 	int dot = 0;
 	for (int i = 0; i < size; i++)
 	{
-		if (arg[i] == '.')
-		{
-			if (dot == 0)
-				dot = 1;
-			else
-			{
-				printf("文件路径不能回溯(包含..)\n");
-				return 0;
-			}
-		}
-		else
-		{
-			if (dot == 1)
-				dot = 0;
-		}
+		if (arg[i] == '\\' || arg[i] == '/')
+			return 0;
 	}
 	return 1;
 }
 
-int send_file(int work_fd, int sock_fd, char *filepath){
-	printf("正在发送文件：%s\n", filepath);
+int send_file(int work_fd, int sock_fd, char *filepath, char* file_name)
+{
+	if (!file_name_valid(file_name,sizeof(file_name))){
+		printf("文件名不能包含路径(斜杠)\n");
+		send_num(sock_fd, PATH_FAIL);
+		return 0;
+	}
+	// printf("正在发送文件：%s\n", filepath);
 	FILE *file = fopen(filepath, "r");
 	if (file == NULL)
 	{
+		// debug
+		// printf("file打开失败");
 		send_num(sock_fd, FILE_UNVAIL);
 		perror("open file error");
 		return 0;
 	}
 	else
 	{
+		// debug
+		// printf("file已打开\n");
 		send_num(sock_fd, FILE_VAIL);
 	}
 
@@ -199,13 +197,17 @@ int send_file(int work_fd, int sock_fd, char *filepath){
 	if (fstat(fd, &s) < 0)
 	{
 		perror("fstat error");
+		send_num(sock_fd, -1);
 		return 0;
+	} else{
+		send_num(sock_fd, s.st_size / MAX_SIZE + 1);
 	}
 	close(fd);
 	// printf("服务器get_num: %ld\n", (s.st_size / MAX_SIZE + 1));
 	// debug
-	// exit(0);
-	send_num(sock_fd, s.st_size / MAX_SIZE + 1);
+	printf("st_size: %ld", s.st_size);
+
+	
 
 	//正式开始传输
 	char buf[MAX_SIZE];
@@ -214,7 +216,7 @@ int send_file(int work_fd, int sock_fd, char *filepath){
 	while (!feof(file))
 	{
 		bzero(buf, sizeof(buf));
-		printf("正在进行第%d条发送...\n", ++send_time);
+		// printf("正在进行第%d条发送...\n", ++send_time);
 		size = fread(buf, 1, MAX_SIZE, file);
 		// printf("读取内容: %s\n", buf);
 		// printf("读取长度: %d\n", size);
@@ -224,20 +226,33 @@ int send_file(int work_fd, int sock_fd, char *filepath){
 	return 1;
 }
 
-int get_file(int work_fd, int sock_fd, char *filepath){
-	if (get_return_code(sock_fd) == FILE_UNVAIL)
+int get_file(int work_fd, int sock_fd, char *filepath)
+{
+	int code = get_return_code(sock_fd);
+	if (code == FILE_UNVAIL)
 	{
-		printf("获取文件失败");
+		printf("获取文件失败\n");
+		return 0;
+	} else if (code == PATH_FAIL)
+	{
+		printf("文件名不能包含路径(斜杠)\n");
 		return 0;
 	}
 
 	int get_num = get_return_code(sock_fd); //文件传输次数
-	// printf("接受到文件传输总次数:%d\n", get_num);
+	if(get_num < 0){
+		printf("获取文件传输次数失败\n");
+		return 0;
+	}
+
+	//debug
+	// printf("接收到文件传输总次数:%d\n", get_num);
 	FILE *file = fopen(filepath, "w");
 	int size;
 	char data[MAX_SIZE];
 	for (int i = 0; i < get_num; i++)
 	{
+		bzero(data, sizeof(data));
 		// printf("正在进行第%d次接收...\n", i + 1);
 		size = recv(work_fd, data, sizeof(data), 0);
 		if (size < 0)
@@ -245,7 +260,7 @@ int get_file(int work_fd, int sock_fd, char *filepath){
 			perror("reading file data error\n");
 			return 0;
 		}
-		// printf("接受到内容: %s\n", data);
+		// printf("接收到内容: %s\n", data);
 		fwrite(data, 1, size, file);
 	}
 	fclose(file);

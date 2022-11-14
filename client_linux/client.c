@@ -13,7 +13,10 @@ int main(int argc, char *argv[])
 	int work_fd, ret_code, s;
 	char buf[MAX_SIZE], port[10], arg[100], code[5];
 	struct addrinfo hints, *result, *rp;
-	// debug
+	
+	//debug
+	char host[] = "localhost";
+
 	// if (argc != 2)
 	// {
 	// 	printf("Please input client hostname\n");
@@ -21,7 +24,6 @@ int main(int argc, char *argv[])
 	// }
 
 	// char *host = argv[1];
-	char host[] = "localhost";
 
 	//获取与主机名匹配的地址
 	bzero(&hints, sizeof(struct addrinfo));
@@ -184,7 +186,7 @@ int client_read_command(char *buf, int size, char *arg, char *code)
 	setbuf(stdin, NULL);
 	read_input(buf, size);
 	//debug
-	printf("buf: %s", buf);
+	//printf("buf: %s", buf);
 
 	// char *temp_arg = NULL;
 	// temp_arg = strtok(buf, " ");
@@ -267,7 +269,7 @@ int client_get(int work_fd, char *file_name)
 	strcat(filepath, FILE_DIR);
 	strcat(filepath, file_name);
 
-	get_return_code(sock_fd); //此处接受到SERVER_READY
+	get_return_code(sock_fd); //此处接收到SERVER_READY
 
 	get_file(work_fd, sock_fd, filepath);
 
@@ -282,9 +284,9 @@ int client_put(int work_fd, char *file_name){
 	strcat(filepath, FILE_DIR);
 	strcat(filepath, file_name);
 
-	get_return_code(sock_fd); //此处接受到SERVER_READY
+	get_return_code(sock_fd); //此处接收到SERVER_READY
 
-	send_file(work_fd, sock_fd, filepath);
+	send_file(work_fd, sock_fd, filepath, file_name);
 
 	get_return_code(sock_fd); //此处接收RET_SUCCESS
 
@@ -298,7 +300,7 @@ int client_ls(int work_fd, int sock_fd) //以这个函数为例
 	int temp = 0;
 	bzero(buf, sizeof(buf));
 	//等待服务器启动的信息
-	if((recv(sock_fd, &temp, sizeof(temp), 0)) < 0)//此处接受到SERVER_READY
+	if((recv(sock_fd, &temp, sizeof(temp), 0)) < 0)//此处接收到SERVER_READY
 	{
 		perror("client: error reading message from server\n");
 		exit(1);
@@ -317,7 +319,7 @@ int client_ls(int work_fd, int sock_fd) //以这个函数为例
 	}
 
 	//等待服务器完成的消息
-	if (recv(sock_fd, &temp, sizeof(temp), 0) < 0) //此处接受到RET_SUCCESS
+	if (recv(sock_fd, &temp, sizeof(temp), 0) < 0) //此处接收到RET_SUCCESS
 	{
 		perror("client:error reading message from server\n");
 		exit(1);

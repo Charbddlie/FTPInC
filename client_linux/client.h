@@ -8,7 +8,7 @@
 #ifndef CLIENT_H_
 #define CLIENT_H_
 
-#define FILE_DIR "./local/"
+#define FILE_DIR "../client_linux/local/"
 #include "../common/common.h"
 //根据回应码在终端上输出相应的信息
 void print_return_code(int rc);

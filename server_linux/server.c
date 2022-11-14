@@ -376,6 +376,7 @@ int server_get_request(int sock_fd, char *cmd, char *arg)
 		exit(1);
 	}
 
+	printf("接收到指令:%s\n", buf);
 	// strcpy(cmd, buf);
 	// // 下两行为原有代码，可能是用于处理quit指令的？
 	// char *temp = buf + 5;
@@ -392,7 +393,7 @@ int server_get_request(int sock_fd, char *cmd, char *arg)
 	}
 	else
 	{
-		printf("cmd:%s\n",cmd);
+		// printf("cmd:%s\n",cmd);
 		ret_code = CMD_FAIL;
 	}
 	send_num(sock_fd, ret_code);
@@ -593,7 +594,7 @@ void server_cmd_get(int work_fd, int sock_fd, char *file_name)
 	strcat(filepath, "/");
 	strcat(filepath, file_name);
 
-	send_file(work_fd, sock_fd, filepath);
+	send_file(work_fd, sock_fd, filepath, file_name);
 
 	//debug++++++++++++++++++++++==
 	// printf("cur_dir: %s\n", current_dir);

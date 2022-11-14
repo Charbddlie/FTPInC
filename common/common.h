@@ -19,6 +19,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <ctype.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <sys/types.h>
@@ -48,6 +49,7 @@
 #define QUIT_SUCESS 221
 #define CONN_SUCCESS 220
 #define RET_SUCCESS 226
+#define PATH_FAIL 510
 #define CMD_FAIL 502
 #define FILE_UNVAIL 550
 
@@ -67,6 +69,6 @@ void get_cmd_first_arg(char *buf, char *cmd, char *arg);
 // 以下函数都当作bool用，出错返回0，直接用if就能判断
 //处理文件路径
 int file_name_valid(char *arg, int size);
-int send_file(int work_fd, int sock_fd, char *file_path);
+int send_file(int work_fd, int sock_fd, char *file_path, char *file_name);
 int get_file(int work_fd, int sock_fd, char *filepath);
 #endif
