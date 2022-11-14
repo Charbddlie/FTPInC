@@ -101,7 +101,6 @@ int main(int argc, char *argv[])
 			close(sock_fd);
 			exit(1);
 		}
-
 		ret_code = get_return_code(sock_fd); //读取服务器响应
 		if (ret_code == QUIT_SUCESS)
 		{
@@ -115,7 +114,7 @@ int main(int argc, char *argv[])
 		else //命令是合法的
 		{
 			//打开数据连接
-			work_fd = client_open_conn(sock_fd);
+			work_fd = client_open_conn();
 			if (work_fd < 0)
 			{
 				perror("Error opening socket for data connection");
@@ -124,23 +123,23 @@ int main(int argc, char *argv[])
 			//执行命令
 			if (strcmp(code, "LS") == 0)
 			{
-				client_ls(work_fd, sock_fd);
+				client_ls(work_fd);
 			}
 			else if (strcmp(code, "PWD") == 0)
 			{
-				client_pwd(work_fd, sock_fd);
+				client_pwd(work_fd);
 			}
 			else if (strcmp(code, "MKDIR") == 0)
 			{
-				client_mkdir(work_fd, sock_fd);
+				client_mkdir(work_fd, arg);
 			}
 			else if (strcmp(code, "CD") == 0)
 			{
-				client_cd(work_fd, sock_fd);
+				client_cd(work_fd, arg);
 			}
 			else if (strcmp(code, "DELETE") == 0)
 			{
-				client_delete(work_fd, sock_fd);
+				client_delete(work_fd, arg);
 			}
 			else if (strcmp(code, "GET") == 0)
 			{
@@ -209,6 +208,8 @@ int client_read_command(char *buf, int size, char *arg, char *code)
 	else if(strcmp(code, "mkdir") == 0 || strcmp(code, "MKDIR") == 0)
 	{
 		strcpy(code, "MKDIR");
+		if(!strcmp(arg,"\0"))
+			return -1;
 	}
 	else if(strcmp(code, "cd") == 0 || strcmp(code, "CD") == 0)
 	{
@@ -217,6 +218,8 @@ int client_read_command(char *buf, int size, char *arg, char *code)
 	else if(strcmp(code, "delete") == 0 || strcmp(code, "DELETE") == 0)
 	{
 		strcpy(code, "DELETE");
+		if(!strcmp(arg,"\0"))
+			return -1;
 	}
 	else if(strcmp(code, "get") == 0)
 	{
@@ -248,7 +251,7 @@ int client_read_command(char *buf, int size, char *arg, char *code)
 	return 0;
 }
 
-int client_open_conn(int sock_fd)
+int client_open_conn()
 {
 	int listen_fd = init_server(DATA_PORT);
 	int ack = 1;
@@ -293,7 +296,7 @@ int client_put(int work_fd, char *file_name){
 	return 0;
 }
 
-int client_ls(int work_fd, int sock_fd) //以这个函数为例
+int client_ls(int work_fd) //以这个函数为例
 {
 	size_t n;
 	char buf[MAX_SIZE];
@@ -328,7 +331,7 @@ int client_ls(int work_fd, int sock_fd) //以这个函数为例
 	return 0;
 }
 
-int client_pwd(int work_fd,int sock_fd)
+int client_pwd(int work_fd)
 {
 	size_t n;
 	char buf[MAX_SIZE];
@@ -364,7 +367,7 @@ int client_pwd(int work_fd,int sock_fd)
 	return 0;
 }
 
-int client_mkdir(int work_fd,int sock_fd)
+int client_mkdir(int work_fd, char *dir_name)
 {
 	size_t n;
 	char buf[MAX_SIZE];
@@ -378,14 +381,6 @@ int client_mkdir(int work_fd,int sock_fd)
 		perror("client: error reading message from server\n");
 		exit(1);
 	}
-
-	char dir_name[MAX_SIZE];
-	fflush(stdout);
-	printf("dir name:");
-	scanf("%s", dir_name);
-	char *temp_arg = NULL;
-	temp_arg = strtok(dir_name, " ");
-	temp_arg = strtok(NULL, " ");
 
 	//发送文件夹名
 	if(send(work_fd, dir_name, (int)strlen(dir_name), 0) < 0)
@@ -400,7 +395,7 @@ int client_mkdir(int work_fd,int sock_fd)
 		perror("client: error reading message from server\n");
 		exit(1);
 	}
-	if(ntohl(success) == 1)
+	if(ntohl(success) == SERVER_READY)
 		printf("%s creation succeed\n", dir_name);
 	else
 		printf("%s creation failed\n", dir_name);
@@ -408,7 +403,7 @@ int client_mkdir(int work_fd,int sock_fd)
 	return 0;
 }
 
-int client_cd(int work_fd,int sock_fd)
+int client_cd(int work_fd, char *path_name)
 {
 	size_t n;
 	char buf[MAX_SIZE];
@@ -417,19 +412,14 @@ int client_cd(int work_fd,int sock_fd)
 	bzero(buf, sizeof(buf));
 	//等待服务器启动的信息
 
+	if(!strcmp(path_name,"\0"))
+		strcpy(path_name, "/user_dir");
+
 	if((n = recv(sock_fd, &temp, sizeof(temp), 0)) < 0)
 	{
 		perror("client: error reading message from server\n");
 		exit(1);
 	}
-
-	char path_name[MAX_SIZE];
-	fflush(stdout);
-	printf("path name:");
-	scanf("%s", path_name);
-	char *temp_arg = NULL;
-	temp_arg = strtok(path_name, " ");
-	temp_arg = strtok(NULL, " ");
 
 	//发送路径
 	if(send(work_fd, path_name, (int)strlen(path_name), 0) < 0)
@@ -444,7 +434,8 @@ int client_cd(int work_fd,int sock_fd)
 		perror("client: error reading message from server\n");
 		exit(1);
 	}
-	if(ntohl(success) == 1)
+
+	if(ntohl(success) == SERVER_READY)
 		printf("change to %s succeed\n", path_name);
 	else if(ntohl(success) == 0)
 		printf("path:%s not exist\n", path_name);
@@ -454,7 +445,7 @@ int client_cd(int work_fd,int sock_fd)
 	return 0;
 }
 
-int client_delete(int work_fd,int sock_fd)
+int client_delete(int work_fd, char *file_name)
 {
 	size_t n;
 	char buf[MAX_SIZE];
@@ -469,18 +460,10 @@ int client_delete(int work_fd,int sock_fd)
 		exit(1);
 	}
 
-	char file_name[MAX_SIZE];
-	fflush(stdout);
-	printf("file name:");
-	scanf("%s", file_name);
-	char *temp_arg = NULL;
-	temp_arg = strtok(file_name, " ");
-	temp_arg = strtok(NULL, " ");
-
 	//发送文件名
 	if(send(work_fd, file_name, (int)strlen(file_name), 0) < 0)
 	{
-		perror("client: error sending path_name from server\n");
+		perror("client: error sending file_name from server\n");
 		exit(1);
 	}
 
@@ -490,7 +473,7 @@ int client_delete(int work_fd,int sock_fd)
 		perror("client: error reading message from server\n");
 		exit(1);
 	}
-	if(ntohl(success) == 1)
+	if(ntohl(success) == SERVER_READY)
 		printf("delete %s succeed\n", file_name);
 	else if(ntohl(success) == 0)
 		printf("file:%s not exist\n", file_name);

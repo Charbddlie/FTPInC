@@ -19,17 +19,17 @@ int client_get(int work_fd, char *arg);
 //向服务端发送指定文件
 int client_put(int work_fd, char *arg);
 //客户端打开连接
-int client_open_conn(int sock_fd);
+int client_open_conn();
 //列出当前目录的文件
-int client_ls(int work_fd, int sock_fd);
+int client_ls(int work_fd);
 //返回当前所在文件夹
-int client_pwd(int work_fd,int sock_fd);
+int client_pwd(int work_fd);
 //新建文件夹
-int client_mkdir(int work_fd,int sock_fd);
+int client_mkdir(int work_fd, char *dir_name);
 //变更所在目录
-int client_cd(int work_fd,int sock_fd);
+int client_cd(int work_fd, char *path_name);
 //删除文件
-int client_delete(int work_fd,int sock_fd);
+int client_delete(int work_fd, char *file_name);
 //客户端向服务端发送命令
 int client_send_cmd(char *arg, char *code);
 //客户端登录
