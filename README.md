@@ -6,7 +6,11 @@
 2. 在server_linux目录下执行：`make`命令进行编译、`make clean`命令删除可运行文件、`sudo ./server`命令运行客户端程序。
 3. 登录名和密码在`FTPInC`目录下的隐藏文件`.passwd`中。每一条记录包含用户名、密码、权限。
 4. 目前实现指令delete、ls、cd、mkdir、pwd
-5. cd（切换当前目录）操作需输入全路径，如切换到user_dir下的test文件夹，输入路径为"/user_dir/test"，或使用"~"基于当前位置进行切换，如在user_dir文件夹，输入路径为"~/test"。
+5. cd:
+- 符号控制：`cd /`、`cd ~`、`cd  `直接回到根目录;`cd ..`回到父目录;
+- 全路径:如切换到user_dir下的test文件夹，输入`cd /user_dir/test`;
+- 相对路径:如切换到user_dir下的test文件夹,若当前在user_dir文件夹，则输入`cd test`;
+- 权限控制：无法切出user_dir文件夹，user_dir作为根目录;
 6. mkdir目前仅可用于在当前位置下新建文件夹。
 7. delete目前仅可用于在当前位置下删除文件，目的是防止用户删除user_dir，或是在文件夹内删除该文件夹之类的操作。
 7. 目前cd、mkdir、delete均改为了"指令 文件/目录名"的格式，cd若传入空值则回到user_dir目录。
