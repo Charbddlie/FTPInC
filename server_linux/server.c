@@ -519,29 +519,60 @@ int server_cmd_cd(int work_fd, int sock_fd)
 
 	if(recv(work_fd, get_path, MAX_SIZE, 0) > 0)
 	{
-		//以当前目录为基准
-		if( get_path[0] == '~')
+		if(get_path[0] == '~'||(strlen(get_path)==1&&get_path[0] == '/'))
 		{
-			memmove(get_path, get_path+1, strlen(get_path));
+			if(strlen(get_path)!=1){
+				send_num(sock_fd, 0);
+			}
+			else{
+				current_dir[0]='\0';
+				strcat(current_dir, "/user_dir");
+				send_num(sock_fd, SERVER_READY);
+			}
+		}
+		else if(get_path[0] == '.'&& get_path[1] == '.'){
+			if(strlen(get_path)!=2){
+				send_num(sock_fd, 0);
+			}
+			else{
+				for(int l=strlen(current_dir)-1;l>=0;l--){
+					if(current_dir[l]=='/'){
+						if(l==0){
+							send_num(sock_fd, PATH_OUT);
+							return 0;
+						}
+						else{
+							current_dir[l]='\0';
+							send_num(sock_fd, SERVER_READY);
+						}
+						break;
+					}
+				}
+			}
+		}
+		else if(get_path[0] == '/')
+		{
 			strcat(new_path, "..");
-			strcat(new_path, current_dir);
 			strcat(new_path, get_path);
 			if (!access(new_path, 0))
 			{
-				strcat(current_dir,get_path);
+				current_dir[0]='\0';
+				strcat(current_dir, get_path);
 				printf("change path to:%s\n", current_dir);
 				send_num(sock_fd, SERVER_READY);
 			}
 			else
 				send_num(sock_fd, 0);
 		}
-		else
-		{
+		else{
 			strcat(new_path, "..");
+			strcat(new_path, current_dir);
+			strcat(new_path, "/");
 			strcat(new_path, get_path);
 			if (!access(new_path, 0))
 			{
-				strcpy(current_dir, get_path);
+				strcat(current_dir, "/");
+				strcat(current_dir, get_path);
 				printf("change path to:%s\n", current_dir);
 				send_num(sock_fd, SERVER_READY);
 			}

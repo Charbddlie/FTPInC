@@ -52,6 +52,7 @@
 #define PATH_FAIL 510
 #define CMD_FAIL 502
 #define FILE_UNVAIL 550
+#define PATH_OUT 666
 
 int init_server(int port);
 int accept_client(int sock_fd);

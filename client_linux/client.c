@@ -437,6 +437,8 @@ int client_cd(int work_fd, char *path_name)
 
 	if(ntohl(success) == SERVER_READY)
 		printf("change to %s succeed\n", path_name);
+    else if(ntohl(success) == PATH_OUT)
+		printf("already in the root dir!\n");
 	else if(ntohl(success) == 0)
 		printf("path:%s not exist\n", path_name);
 	else
