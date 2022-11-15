@@ -180,7 +180,7 @@ int client_read_command(char *buf, int size, char *arg, char *code)
 	bzero(arg, sizeof(arg));
 	bzero(code, sizeof(code));
 
-	printf("client> ");
+	printf("\033[1;33;49mclient> \033[0m");
 	fflush(stdout);
 	setbuf(stdin, NULL);
 	read_input(buf, size);
@@ -479,6 +479,11 @@ int client_delete(int work_fd, char *file_name)
 		printf("delete %s succeed\n", file_name);
 	else if(ntohl(success) == 0)
 		printf("file:%s not exist\n", file_name);
+	else if(ntohl(success) == IS_DT_DIR)
+		printf("you can't delete a dictory\n");
+	else if(ntohl(success)==OUT_OF_AUTHORITY){
+		printf("you have no right to delete file:%s\n", file_name);
+	}
 	else
 		printf("delete %s failed\n", file_name);
 

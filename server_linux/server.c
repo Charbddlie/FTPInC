@@ -446,10 +446,21 @@ int server_cmd_ls(int work_fd, int sock_fd)
 	}
 	int n = 0;
 	bzero(data, sizeof(data));
+	char type[100];
 	while((file = readdir(direc)) != NULL)
 	{
-		sprintf(data + n, "%s\n", file->d_name);
-		n += strlen(file->d_name) + 1;
+		if(file->d_type==DT_DIR){
+		    type[0]='\0';
+			strcat(type,"\033[1;34;49m");
+			strcat(type,file->d_name);
+			strcat(type,"\033[0m");
+			sprintf(data + n, "%s\n", type);
+		    n += strlen(type) + 1;
+		}
+		else{
+			sprintf(data + n, "%s\n", file->d_name);
+			n += strlen(file->d_name) + 1;
+		}
 	}
 	data[n] = '\0';
 	closedir(direc);
@@ -587,27 +598,43 @@ int server_cmd_cd(int work_fd, int sock_fd)
 
 int server_cmd_delete(int work_fd, int sock_fd)
 {
-	//删除文件
 	send_num(sock_fd, SERVER_READY);
 	char delete_path[MAX_SIZE];
 	char file_name[MAX_SIZE];
 	bzero(delete_path, sizeof(delete_path));
 	bzero(file_name, sizeof(file_name));
-
 	if(recv(work_fd, file_name, MAX_SIZE, 0) > 0)
 	{
+		if(!strcmp(file_name,"..")||!strcmp(file_name,".")){
+			send_num(sock_fd, OUT_OF_AUTHORITY);
+			return 0;
+		}
+		struct dirent* file;
 		strcat(delete_path, "..");
 		strcat(delete_path, current_dir);
 		strcat(delete_path, "/");
-		strcat(delete_path,file_name);
-		if (!access(delete_path, 0))
+		DIR* direc = opendir(delete_path);
+		if(direc == NULL)
 		{
-			remove(delete_path);
-			printf("delete %s\n", delete_path);
-			send_num(sock_fd, SERVER_READY);
+			perror("open dir error");
+			exit(1);
 		}
-		else
-			send_num(sock_fd, 0);
+		while((file = readdir(direc)) != NULL){
+			if(!strcmp(file->d_name,file_name)){
+				if(file->d_type==DT_DIR){
+					send_num(sock_fd, IS_DT_DIR);
+					return 0;
+				}
+				else{
+					strcat(delete_path,file_name);
+					remove(delete_path);
+					printf("delete %s\n", delete_path);
+					send_num(sock_fd, SERVER_READY);
+					return 0;
+				}
+			}
+		}
+		send_num(sock_fd, 0);
 	}
 	else
 		send_num(sock_fd, -1);
