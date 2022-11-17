@@ -190,7 +190,7 @@ int send_file(int work_fd, int sock_fd, char *filepath, char *file_name)
 	// 两种不同打开方式，对应ascii和二进制两种传输方式
 	FILE *file = NULL;
 	printf("%s\n", extern_name);
-	if (strcmp(extern_name, ".txt") == 0)
+	if (strcmp(extern_name, ".txt") == 0||strcmp(extern_name, ".c") == 0||strcmp(extern_name, ".cpp") == 0)
 	{
 		file = fopen(filepath, "r");
 		// debug

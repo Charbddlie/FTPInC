@@ -12,6 +12,7 @@
 #define USER_DIR "/user_dir"
 
 char current_dir[MAX_SIZE] = USER_DIR;
+char manage_level = '0';
 
 int main()
 {
@@ -125,6 +126,10 @@ void work_process(int sock_fd)
 			}
 			else if (strcmp(cmd, "MKDIR") == 0)
 			{
+				if(manage_level != '3') {
+					send_num(sock_fd, OUT_OF_AUTHORITY);
+					continue;
+				}
 				server_cmd_mkdir(work_fd, sock_fd);
 			}
 			else if (strcmp(cmd, "CD") == 0)
@@ -133,14 +138,26 @@ void work_process(int sock_fd)
 			}
 			else if (strcmp(cmd, "DELETE") == 0)
 			{
+				if(manage_level != '3') {
+					send_num(sock_fd, OUT_OF_AUTHORITY);
+					continue;
+				}
 				server_cmd_delete(work_fd, sock_fd);
 			}
 			else if (strcmp(cmd, "GET") == 0)
 			{
+				if(manage_level == '1') {
+					send_num(sock_fd, OUT_OF_AUTHORITY);
+					continue;
+				}
 				server_cmd_get(work_fd, sock_fd, arg);
 			}
 			else if (strcmp(cmd, "PUT") == 0)
 			{
+				if(manage_level == '1') {
+					send_num(sock_fd, OUT_OF_AUTHORITY);
+					continue;
+				}
 				server_cmd_put(work_fd, sock_fd, arg);
 			}
 
@@ -196,6 +213,8 @@ int server_check(char *username, char *password)
 			}
 			else
 			{
+				i = i + 1;
+				manage_level = temp[i];//查看并记录用户权限等级
 				result = 1;
 				break;
 			}
