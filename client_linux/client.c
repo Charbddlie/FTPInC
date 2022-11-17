@@ -91,9 +91,10 @@ int main(int argc, char *argv[])
 			printf("invalid command\n");
 			continue;
 		}
-		//debug
+		// //debug
 		// printf("\n\nbuf: %s\n", buf);
-		// printf("cmd: %s  arg: %s", code, arg);
+		// printf("cmd: %s  arg: %s\n", code, arg);
+		// printf("debug\n");
 
 		//发送命令到服务器
 		if (send(sock_fd, buf, (int)strlen(buf), 0) < 0)
@@ -107,7 +108,7 @@ int main(int argc, char *argv[])
 			print_return_code(QUIT_SUCESS);
 			break;
 		}
-		if (ret_code == CMD_FAIL)
+		else if (ret_code == CMD_FAIL)
 		{
 			printf("%s invalid command.\n", code);
 		}
@@ -287,12 +288,14 @@ int client_put(int work_fd, char *file_name){
 	strcat(filepath, FILE_DIR);
 	strcat(filepath, file_name);
 
-	get_return_code(sock_fd); //此处接收到SERVER_READY
-
-	send_file(work_fd, sock_fd, filepath, file_name);
-
-	get_return_code(sock_fd); //此处接收RET_SUCCESS
-
+	if(get_return_code(sock_fd) == OUT_OF_AUTHORITY) {
+		printf("you have no right to put\n");
+	}
+	else {
+		//说明之前接收到的是SERVER_READY
+		send_file(work_fd, sock_fd, filepath, file_name);	
+		get_return_code(sock_fd); //此处接收RET_SUCCESS
+	}
 	return 0;
 }
 
@@ -397,6 +400,9 @@ int client_mkdir(int work_fd, char *dir_name)
 	}
 	if(ntohl(success) == SERVER_READY)
 		printf("%s creation succeed\n", dir_name);
+    else if(ntohl(success) == OUT_OF_AUTHORITY) {
+		printf("you have no right to mkdir\n");
+	}
 	else
 		printf("%s creation failed\n", dir_name);
 
@@ -477,13 +483,12 @@ int client_delete(int work_fd, char *file_name)
 	}
 	if(ntohl(success) == SERVER_READY)
 		printf("delete %s succeed\n", file_name);
+	else if(ntohl(success)==OUT_OF_AUTHORITY)
+		printf("you have no right to delete file:%s\n", file_name);
 	else if(ntohl(success) == 0)
 		printf("file:%s not exist\n", file_name);
 	else if(ntohl(success) == IS_DT_DIR)
 		printf("you can't delete a dictory\n");
-	else if(ntohl(success)==OUT_OF_AUTHORITY){
-		printf("you have no right to delete file:%s\n", file_name);
-	}
 	else
 		printf("delete %s failed\n", file_name);
 

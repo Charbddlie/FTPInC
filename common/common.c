@@ -96,11 +96,13 @@ int connect_server(int serv_port, char *serv_ip)
 int send_num(int sock_fd, int ret_code)
 {
 	int conv = htonl(ret_code);
-	if (send(sock_fd, &conv, sizeof(conv), 0) < 0)
+	int number = send(sock_fd, &conv, sizeof(conv), 0);
+	if (number < 0)
 	{
 		perror("send ret_code error!");
 		return -1;
 	}
+	// printf("%d\t", ret_code);//debug
 	return 0;
 }
 
@@ -205,7 +207,7 @@ int send_file(int work_fd, int sock_fd, char *filepath, char* file_name)
 	close(fd);
 	// printf("服务器get_num: %ld\n", (s.st_size / MAX_SIZE + 1));
 	// debug
-	printf("st_size: %ld", s.st_size);
+	printf("st_size: %ld\n", s.st_size);
 
 	
 

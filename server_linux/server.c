@@ -128,7 +128,6 @@ void work_process(int sock_fd)
 			{
 				if(manage_level != '3') {
 					printf("该用户权限无法完成此操作\n");
-					return;
 				}
 				server_cmd_mkdir(work_fd, sock_fd);
 			}
@@ -140,7 +139,6 @@ void work_process(int sock_fd)
 			{
 				if(manage_level != '3') {
 					printf("该用户权限无法完成此操作\n");
-					return;
 				}
 				server_cmd_delete(work_fd, sock_fd);
 			}
@@ -152,7 +150,6 @@ void work_process(int sock_fd)
 			{
 				if(manage_level == '1') {
 					printf("该用户权限无法完成此操作\n");
-					return;
 				}
 				server_cmd_put(work_fd, sock_fd, arg);
 			}
@@ -246,7 +243,7 @@ int manager_check(int sock_fd,char* accountName,char *au){
 		printf("Agree please press 'y' or 'Y'，or press 'N' or 'n' to refuse:");
 		scanf("%s", getAnswer);
 		if (getAnswer[0] == 'y' || getAnswer[0] == 'Y') {
-			printf("Please set permissions for this user：1（can only upload）、2（upload & download）、3（upload & download & change directory）\n");
+			printf("Please set permissions for this user：1（read and download）、2（upload & read & download）、3（all）\n");
 			while (1) {
 				printf("Please enter number（1、2、3）：");
 				scanf("%s", getAnswer);
@@ -515,7 +512,10 @@ int server_cmd_mkdir(int work_fd, int sock_fd)
 	strcat(new_dir, current_dir);
 	strcat(new_dir, "/");
 
-	if(recv(work_fd, get_dir, MAX_SIZE, 0) > 0)
+	if(manage_level != '3') {
+		send_num(sock_fd, OUT_OF_AUTHORITY);
+	}
+	else if(recv(work_fd, get_dir, MAX_SIZE, 0) > 0)
 	{
 		strcat(new_dir, get_dir);
 		int isCreate = mkdir(new_dir,0775);
@@ -641,7 +641,11 @@ int server_cmd_delete(int work_fd, int sock_fd)
 					send_num(sock_fd, IS_DT_DIR);
 					return 0;
 				}
-				else{
+				else if(manage_level != '3') {
+					send_num(sock_fd, OUT_OF_AUTHORITY);
+					return 0;
+				}
+				else{ 
 					strcat(delete_path,file_name);
 					remove(delete_path);
 					printf("delete %s\n", delete_path);
@@ -681,8 +685,12 @@ void server_cmd_get(int work_fd, int sock_fd, char *file_name)
 
 void server_cmd_put(int work_fd, int sock_fd, char *file_name)
 {
+	if(manage_level == '1'){
+		send_num(sock_fd, OUT_OF_AUTHORITY);
+		// printf("debug\n");
+	}
+	else {
 	send_num(sock_fd, SERVER_READY);
-
 	static char filepath[MAX_SIZE] = {'\0'};
 	bzero(filepath, MAX_SIZE);
 	strcat(filepath, "..");
@@ -693,4 +701,6 @@ void server_cmd_put(int work_fd, int sock_fd, char *file_name)
 	get_file(work_fd, sock_fd, filepath);
 
 	send_num(sock_fd, RET_SUCCESS);
+	}
+	
 }

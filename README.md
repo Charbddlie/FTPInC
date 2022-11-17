@@ -18,7 +18,8 @@
 - 目前仅可用于在当前位置下删除文件。
 - 只能删除文件，不能删除文件夹。
 
-7. 目前cd、mkdir、delete均改为了"指令 文件/目录名"的格式，cd若传入空值则回到user_dir目录。
+8. 目前cd、mkdir、delete均改为了"指令 文件/目录名"的格式，cd若传入空值则回到user_dir目录。
+9. 权限管理 1（read and download）、2（upload & read & download）、3（all）
 
 #### 2、避坑
 
