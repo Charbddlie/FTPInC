@@ -1,18 +1,10 @@
-/*************************************************************************
-	> File Name: server.c
-	> Author: Ukey
-	> Mail: gsl110809@gmail.com
-	> Created Time: 2017年05月25日 星期四 14时54分01秒
- ************************************************************************/
-
 #include "server.h"
 #include <fcntl.h>
 #include <sys/stat.h>
 
 #define USER_DIR "/user_dir"
-
-char current_dir[MAX_SIZE] = USER_DIR;
 char manage_level = '0';
+char current_dir[MAX_SIZE] = USER_DIR;
 
 int main()
 {
@@ -104,7 +96,6 @@ void work_process(int sock_fd)
 		int ret_code = server_get_request(sock_fd, cmd, arg); //这个函数内部会返回给客户端对于指令的评价（是否可处理）
 		if ((ret_code < 0) || (ret_code == QUIT_SUCESS))
 			break;
-
 		if (ret_code == CMD_SUCCESS)
 		{
 			//创建与客户端的数据连接,之前的是监听连接
@@ -126,10 +117,6 @@ void work_process(int sock_fd)
 			}
 			else if (strcmp(cmd, "MKDIR") == 0)
 			{
-				if(manage_level != '3') {
-					send_num(sock_fd, OUT_OF_AUTHORITY);
-					continue;
-				}
 				server_cmd_mkdir(work_fd, sock_fd);
 			}
 			else if (strcmp(cmd, "CD") == 0)
@@ -138,26 +125,14 @@ void work_process(int sock_fd)
 			}
 			else if (strcmp(cmd, "DELETE") == 0)
 			{
-				if(manage_level != '3') {
-					send_num(sock_fd, OUT_OF_AUTHORITY);
-					continue;
-				}
 				server_cmd_delete(work_fd, sock_fd);
 			}
 			else if (strcmp(cmd, "GET") == 0)
 			{
-				if(manage_level == '1') {
-					send_num(sock_fd, OUT_OF_AUTHORITY);
-					continue;
-				}
 				server_cmd_get(work_fd, sock_fd, arg);
 			}
 			else if (strcmp(cmd, "PUT") == 0)
 			{
-				if(manage_level == '1') {
-					send_num(sock_fd, OUT_OF_AUTHORITY);
-					continue;
-				}
 				server_cmd_put(work_fd, sock_fd, arg);
 			}
 
@@ -214,7 +189,9 @@ int server_check(char *username, char *password)
 			else
 			{
 				i = i + 1;
-				manage_level = temp[i];//查看并记录用户权限等级
+				if(temp[i]=='H') manage_level='3';
+				if(temp[i]=='M') manage_level='2';
+				if(temp[i]=='L') manage_level='1';
 				result = 1;
 				break;
 			}
@@ -430,15 +407,27 @@ int server_get_request(int sock_fd, char *cmd, char *arg)
 	}
 
 	printf("接收到指令:%s\n", buf);
-	// strcpy(cmd, buf);
-	// // 下两行为原有代码，可能是用于处理quit指令的？
-	// char *temp = buf + 5;
-	// strcpy(arg, temp);
 	get_cmd_first_arg(buf, cmd, arg);
 
 	if (strcmp(cmd, "QUIT") == 0)
 	{
 		ret_code = QUIT_SUCESS;
+	}
+	else if((strcmp(cmd, "MKDIR") == 0)||(strcmp(cmd, "DELETE") == 0))
+	{
+		if(manage_level != '3') 
+		{
+				send_num(sock_fd, OUT_OF_AUTHORITY);
+				return OUT_OF_AUTHORITY;
+		}
+	}
+	else if((strcmp(cmd, "GET") == 0) || (strcmp(cmd, "PUT") == 0))
+	{
+		if(manage_level == '1') 
+		{
+				send_num(sock_fd, OUT_OF_AUTHORITY);
+				return OUT_OF_AUTHORITY;
+		}
 	}
 	else if ((strcmp(cmd, "USER") == 0) || (strcmp(cmd, "PASS") == 0) || (strcmp(cmd, "LS") == 0) || (strcmp(cmd, "GET") == 0) || (strcmp(cmd, "PUT") == 0) || (strcmp(cmd, "PWD") == 0) || (strcmp(cmd, "MKDIR") == 0) || (strcmp(cmd, "CD") == 0) || (strcmp(cmd, "DELETE") == 0))
 	{
@@ -446,7 +435,6 @@ int server_get_request(int sock_fd, char *cmd, char *arg)
 	}
 	else
 	{
-		// printf("cmd:%s\n",cmd);
 		ret_code = CMD_FAIL;
 	}
 	send_num(sock_fd, ret_code);
@@ -696,7 +684,10 @@ int server_cmd_delete(int work_fd, int sock_fd)
 				}
 				else
 				{
-					strcat(delete_path, file_name);
+					strcat(delete_path, file_name);if(get_return_code(sock_fd)==RET_SUCCESS)//此处接收RET_SUCCESS
+	{
+		printf("File successfully sent!\n");
+	}
 					remove(delete_path);
 					printf("delete %s\n", delete_path);
 					send_num(sock_fd, SERVER_READY);
@@ -723,13 +714,6 @@ void server_cmd_get(int work_fd, int sock_fd, char *file_name)
 	strcat(filepath, file_name);
 
 	send_file(work_fd, sock_fd, filepath, file_name);
-
-	// debug++++++++++++++++++++++==
-	//  printf("cur_dir: %s\n", current_dir);
-	//  printf("file_name: %s\n", file_name);
-	//  exit(0);
-	// debug+++++++++++++++++++++++++
-
 	send_num(sock_fd, RET_SUCCESS);
 }
 

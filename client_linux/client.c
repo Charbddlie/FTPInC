@@ -107,9 +107,12 @@ int main(int argc, char *argv[])
 			print_return_code(QUIT_SUCESS);
 			break;
 		}
-		if (ret_code == CMD_FAIL)
+		else if (ret_code == CMD_FAIL)
 		{
 			printf("%s invalid command.\n", code);
+		}
+		else if (ret_code == OUT_OF_AUTHORITY){
+			printf("you have no right to %s\n",code);
 		}
 		else //命令是合法的
 		{
@@ -224,14 +227,14 @@ int client_read_command(char *buf, int size, char *arg, char *code)
 	else if (strcmp(code, "get") == 0)
 	{
 		strcpy(code, "GET");
-		if (!file_name_valid(arg, sizeof(arg)))
-			return -1;
+		//if (!file_name_valid(arg, sizeof(arg)))
+		//	return -1;
 	}
 	else if (strcmp(code, "put") == 0)
 	{
 		strcpy(code, "PUT");
-		if (!file_name_valid(arg, sizeof(arg)))
-			return -1;
+		//if (!file_name_valid(arg, sizeof(arg)))
+		//	return -1;
 	}
 	else if (strcmp(code, "quit") == 0)
 	{
@@ -275,8 +278,7 @@ int client_get(int work_fd, char *file_name)
 
 	get_file(work_fd, sock_fd, filepath);
 
-	get_return_code(sock_fd); //此处接收RET_SUCCESS
-
+	get_return_code(sock_fd)==RET_SUCCESS;
 	return 0;
 }
 
@@ -291,7 +293,7 @@ int client_put(int work_fd, char *file_name)
 
 	send_file(work_fd, sock_fd, filepath, file_name);
 
-	get_return_code(sock_fd); //此处接收RET_SUCCESS
+	get_return_code(sock_fd)==RET_SUCCESS;
 
 	return 0;
 }

@@ -1,10 +1,3 @@
-/*************************************************************************
-	> File Name: common.c
-	> Author: Ukey
-	> Mail: gsl110809@gmail.com
-	> Created Time: 2017年05月25日 星期四 14时58分33秒
- ************************************************************************/
-
 #include "common.h"
 
 int init_server(int port)
@@ -64,7 +57,6 @@ int accept_client(int listen_fd)
 		perror("accept error");
 		exit(1);
 	}
-	// printf("accept connect from IP:%s PORT:%d,sock_fd=%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port), sock_fd);
 	return sock_fd;
 }
 
@@ -151,9 +143,6 @@ void get_cmd_first_arg(char *buf, char *cmd, char *arg)
 			break;
 		}
 	}
-	// debug
-	//  printf("buf: %s\n", buf);
-	//  printf("cmd: %s  arg: %s\n", cmd, arg);
 }
 
 int file_name_valid(char *arg, int size)
@@ -171,12 +160,10 @@ int send_file(int work_fd, int sock_fd, char *filepath, char *file_name)
 {
 	if (!file_name_valid(file_name, sizeof(file_name)))
 	{
-		printf("文件名不能包含路径(斜杠)\n");
+		printf("File name is not allowed to include '/'\n");
 		send_num(sock_fd, PATH_FAIL);
 		return 0;
 	}
-	// printf("正在发送文件：%s\n", filepath);
-
 	//获取文件后缀名
 	int index = -1;
 	for (int i = 0; i < sizeof(file_name); i++)
@@ -189,32 +176,25 @@ int send_file(int work_fd, int sock_fd, char *filepath, char *file_name)
 
 	// 两种不同打开方式，对应ascii和二进制两种传输方式
 	FILE *file = NULL;
-	printf("%s\n", extern_name);
 	if (strcmp(extern_name, ".txt") == 0||strcmp(extern_name, ".c") == 0||strcmp(extern_name, ".cpp") == 0)
 	{
 		file = fopen(filepath, "r");
-		// debug
-		printf("ascii方式打开\n");
+		printf("File will be transfered in ASCII mode\n");
 	}
 	else
 	{
 		file = fopen(filepath, "rb");
-		// debug
-		printf("二进制方式打开\n");
+		printf("File will be transfered in binary mode\n");
 	}
 
 	if (file == NULL)
 	{
-		// debug
-		// printf("file打开失败");
 		send_num(sock_fd, FILE_UNVAIL);
 		perror("open file error");
 		return 0;
 	}
 	else
 	{
-		// debug
-		// printf("file已打开\n");
 		send_num(sock_fd, FILE_VAIL);
 	}
 
@@ -232,9 +212,7 @@ int send_file(int work_fd, int sock_fd, char *filepath, char *file_name)
 		send_num(sock_fd, s.st_size / MAX_SIZE + 1);
 	}
 	close(fd);
-	// printf("服务器get_num: %ld\n", (s.st_size / MAX_SIZE + 1));
-	// debug
-	printf("st_size: %ld", s.st_size);
+	printf("File's size: %ld\n", s.st_size);
 
 	//正式开始传输
 	char buf[MAX_SIZE];
@@ -243,13 +221,11 @@ int send_file(int work_fd, int sock_fd, char *filepath, char *file_name)
 	while (!feof(file))
 	{
 		bzero(buf, sizeof(buf));
-		// printf("正在进行第%d条发送...\n", ++send_time);
 		size = fread(buf, 1, MAX_SIZE, file);
-		// printf("读取内容: %s\n", buf);
-		// printf("读取长度: %d\n", size);
 		send(work_fd, buf, size, 0);
 	}
 	fclose(file);
+	printf("File successfully sent!\n");
 	return 1;
 }
 
@@ -258,40 +234,36 @@ int get_file(int work_fd, int sock_fd, char *filepath)
 	int code = get_return_code(sock_fd);
 	if (code == FILE_UNVAIL)
 	{
-		printf("获取文件失败\n");
+		printf("file doesn't exist!\n");
 		return 0;
 	}
 	else if (code == PATH_FAIL)
 	{
-		printf("文件名不能包含路径(斜杠)\n");
+		printf("File name is not allowed to include '/'\n");
 		return 0;
 	}
 
 	int get_num = get_return_code(sock_fd); //文件传输次数
 	if (get_num < 0)
 	{
-		printf("获取文件传输次数失败\n");
+		printf("Failed to receive times needed for file transfer\n");
 		return 0;
 	}
-
-	// debug
-	//  printf("接收到文件传输总次数:%d\n", get_num);
 	FILE *file = fopen(filepath, "w");
 	int size;
 	char data[MAX_SIZE];
 	for (int i = 0; i < get_num; i++)
 	{
 		bzero(data, sizeof(data));
-		// printf("正在进行第%d次接收...\n", i + 1);
 		size = recv(work_fd, data, sizeof(data), 0);
 		if (size < 0)
 		{
 			perror("reading file data error\n");
 			return 0;
 		}
-		// printf("接收到内容: %s\n", data);
 		fwrite(data, 1, size, file);
 	}
+	printf("File successfully received!\n");
 	fclose(file);
 	return 1;
 }
