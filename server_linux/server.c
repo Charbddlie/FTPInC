@@ -12,6 +12,7 @@
 #define USER_DIR "/user_dir"
 
 char current_dir[MAX_SIZE] = USER_DIR;
+char manage_level = '0';//用户权限等级
 
 int main()
 {
@@ -125,6 +126,10 @@ void work_process(int sock_fd)
 			}
 			else if (strcmp(cmd, "MKDIR") == 0)
 			{
+				if(manage_level != '3') {
+					printf("该用户权限无法完成此操作\n");
+					return;
+				}
 				server_cmd_mkdir(work_fd, sock_fd);
 			}
 			else if (strcmp(cmd, "CD") == 0)
@@ -133,6 +138,10 @@ void work_process(int sock_fd)
 			}
 			else if (strcmp(cmd, "DELETE") == 0)
 			{
+				if(manage_level != '3') {
+					printf("该用户权限无法完成此操作\n");
+					return;
+				}
 				server_cmd_delete(work_fd, sock_fd);
 			}
 			else if (strcmp(cmd, "GET") == 0)
@@ -141,6 +150,10 @@ void work_process(int sock_fd)
 			}
 			else if (strcmp(cmd, "PUT") == 0)
 			{
+				if(manage_level == '1') {
+					printf("该用户权限无法完成此操作\n");
+					return;
+				}
 				server_cmd_put(work_fd, sock_fd, arg);
 			}
 
@@ -186,6 +199,9 @@ int server_check(char* username, char* password) {
 				break;
 			}
 			else {
+				i = i + 1;
+				manage_level = temp[i];//查看并记录用户权限等级
+				printf("该用户权限等级为%c\n", manage_level);
 				result = 1;
 				break;
 			}
@@ -238,13 +254,13 @@ int manager_check(int sock_fd,char* accountName,char *au){
 					au[0]='\0';
 					switch(getAnswer[0]){
 						case '3':
-							strcat(au,"HIGH");
+							strcat(au,"3");
 							break;
 						case '2':
-							strcat(au,"MID");
+							strcat(au,"2");
 							break;
 						case '1':
-							strcat(au,"LOW");
+							strcat(au,"1");
 							break;
 					}
 					break;
