@@ -27,25 +27,25 @@
 #include <sys/mman.h>
 
 //传输数据的端口用
-#define DATA_PORT   4500
+#define DATA_PORT 4500
 //处理连接的端口用
 #define LISTEN_PORT 4501
 
-#define MAX_SIZE	1024
+#define MAX_SIZE 1024
 
-#define LOGIN_SUCCESS   230
-#define LOGIN_FAILED    430
-#define LOGIN           100
-#define REGIST_SUCCESS  101
-#define REGISTER        102
-#define REGIST_REFUSED   103
-#define REGIST_NAME_REPEAT        104
-#define REGIST_NAME_OK   105
-#define REGIST_APPLICATION_OK   106
+#define LOGIN_SUCCESS 230
+#define LOGIN_FAILED 430
+#define LOGIN 100
+#define REGIST_SUCCESS 101
+#define REGISTER 102
+#define REGIST_REFUSED 103
+#define REGIST_NAME_REPEAT 104
+#define REGIST_NAME_OK 105
+#define REGIST_APPLICATION_OK 106
 
 #define CMD_SUCCESS 200
 #define SERVER_READY 210
-#define FILE_VAIL   222
+#define FILE_VAIL 222
 #define QUIT_SUCESS 221
 #define CONN_SUCCESS 220
 #define RET_SUCCESS 226

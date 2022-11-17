@@ -10,13 +10,13 @@
 #include "../common/common.h"
 
 //服务端检验用户名和密码
-int server_check(char* username, char* password);
+int server_check(char *username, char *password);
 //接收用户名和密码
 int server_login(int sock_fd);
 //
-void file_write(int sock_fd,char *accountName ,char* au);
+void file_write(int sock_fd, char *accountName, char *au);
 //
-int manager_check(int sock_fd,char* accountName,char *au);
+int manager_check(int sock_fd, char *accountName, char *au);
 //
 int server_register(int sock_fd);
 //接收客户端发送的命令
@@ -41,4 +41,3 @@ void server_cmd_put(int sock_fd, int work_fd, char *file_name);
 void work_process(int sock_fd);
 
 #endif
-

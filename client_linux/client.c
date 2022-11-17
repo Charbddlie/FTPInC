@@ -13,8 +13,8 @@ int main(int argc, char *argv[])
 	int work_fd, ret_code, s;
 	char buf[MAX_SIZE], port[10], arg[100], code[5];
 	struct addrinfo hints, *result, *rp;
-	
-	//debug
+
+	// debug
 	char host[] = "localhost";
 
 	// if (argc != 2)
@@ -91,9 +91,9 @@ int main(int argc, char *argv[])
 			printf("invalid command\n");
 			continue;
 		}
-		//debug
-		// printf("\n\nbuf: %s\n", buf);
-		// printf("cmd: %s  arg: %s", code, arg);
+		// debug
+		//  printf("\n\nbuf: %s\n", buf);
+		//  printf("cmd: %s  arg: %s", code, arg);
 
 		//发送命令到服务器
 		if (send(sock_fd, buf, (int)strlen(buf), 0) < 0)
@@ -156,22 +156,22 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-void print_return_code(int rc) 
+void print_return_code(int rc)
 {
 	switch (rc)
 	{
-		case CONN_SUCCESS:
-			printf("\n\nWelcome!!! Please login or register first to use the FTP system.\n");
-			break;
-		case QUIT_SUCESS:
-			printf("Good bye!\n");
-			break;
-		case RET_SUCCESS:
-			printf("Return succeeded.\n");
-			break;
-		case FILE_UNVAIL:
-			printf("File unavailable.\n");
-			break;
+	case CONN_SUCCESS:
+		printf("\n\nWelcome!!! Please login or register first to use the FTP system.\n");
+		break;
+	case QUIT_SUCESS:
+		printf("Good bye!\n");
+		break;
+	case RET_SUCCESS:
+		printf("Return succeeded.\n");
+		break;
+	case FILE_UNVAIL:
+		printf("File unavailable.\n");
+		break;
 	}
 }
 
@@ -184,44 +184,44 @@ int client_read_command(char *buf, int size, char *arg, char *code)
 	fflush(stdout);
 	setbuf(stdin, NULL);
 	read_input(buf, size);
-	//debug
-	//printf("buf: %s", buf);
+	// debug
+	// printf("buf: %s", buf);
 
 	// char *temp_arg = NULL;
 	// temp_arg = strtok(buf, " ");
 	// temp_arg = strtok(NULL, " ");
-	
+
 	// if(temp_arg != NULL)
 	// {
 	// 	strncpy(arg, temp_arg, strlen(temp_arg) + 1);
 	// }
 	get_cmd_first_arg(buf, code, arg);
-	
-	if(strcmp(code, "ls") == 0 || strcmp(code, "LS") == 0)
+
+	if (strcmp(code, "ls") == 0 || strcmp(code, "LS") == 0)
 	{
 		strcpy(code, "LS");
 	}
-	else if(strcmp(code, "pwd") == 0 || strcmp(code, "PWD") == 0)
+	else if (strcmp(code, "pwd") == 0 || strcmp(code, "PWD") == 0)
 	{
 		strcpy(code, "PWD");
 	}
-	else if(strcmp(code, "mkdir") == 0 || strcmp(code, "MKDIR") == 0)
+	else if (strcmp(code, "mkdir") == 0 || strcmp(code, "MKDIR") == 0)
 	{
 		strcpy(code, "MKDIR");
-		if(!strcmp(arg,"\0"))
+		if (!strcmp(arg, "\0"))
 			return -1;
 	}
-	else if(strcmp(code, "cd") == 0 || strcmp(code, "CD") == 0)
+	else if (strcmp(code, "cd") == 0 || strcmp(code, "CD") == 0)
 	{
 		strcpy(code, "CD");
 	}
-	else if(strcmp(code, "delete") == 0 || strcmp(code, "DELETE") == 0)
+	else if (strcmp(code, "delete") == 0 || strcmp(code, "DELETE") == 0)
 	{
 		strcpy(code, "DELETE");
-		if(!strcmp(arg,"\0"))
+		if (!strcmp(arg, "\0"))
 			return -1;
 	}
-	else if(strcmp(code, "get") == 0)
+	else if (strcmp(code, "get") == 0)
 	{
 		strcpy(code, "GET");
 		if (!file_name_valid(arg, sizeof(arg)))
@@ -233,20 +233,19 @@ int client_read_command(char *buf, int size, char *arg, char *code)
 		if (!file_name_valid(arg, sizeof(arg)))
 			return -1;
 	}
-	else if(strcmp(code, "quit") == 0)
+	else if (strcmp(code, "quit") == 0)
 	{
 		strcpy(code, "QUIT");
 	}
 	else
 		return -1;
 
-
 	bzero(buf, sizeof(buf));
 	strcpy(buf, code);
 	strcat(buf, " ");
 	strncat(buf, arg, strlen(arg) + 1);
-	//debug
-	//printf("%s", buf);
+	// debug
+	// printf("%s", buf);
 
 	return 0;
 }
@@ -255,7 +254,7 @@ int client_open_conn()
 {
 	int listen_fd = init_server(DATA_PORT);
 	int ack = 1;
-	if((send(sock_fd, (char *)&ack, sizeof(ack), 0)) < 0)
+	if ((send(sock_fd, (char *)&ack, sizeof(ack), 0)) < 0)
 	{
 		printf("client:ack write error:%d\n", errno);
 		exit(1);
@@ -281,7 +280,8 @@ int client_get(int work_fd, char *file_name)
 	return 0;
 }
 
-int client_put(int work_fd, char *file_name){
+int client_put(int work_fd, char *file_name)
+{
 	static char filepath[MAX_SIZE] = {'\0'};
 	bzero(filepath, MAX_SIZE);
 	strcat(filepath, FILE_DIR);
@@ -303,20 +303,20 @@ int client_ls(int work_fd) //以这个函数为例
 	int temp = 0;
 	bzero(buf, sizeof(buf));
 	//等待服务器启动的信息
-	if((recv(sock_fd, &temp, sizeof(temp), 0)) < 0)//此处接收到SERVER_READY
+	if ((recv(sock_fd, &temp, sizeof(temp), 0)) < 0) //此处接收到SERVER_READY
 	{
 		perror("client: error reading message from server\n");
 		exit(1);
 	}
 
 	//接收服务器传来的信息
-	while((n = recv(work_fd, buf, MAX_SIZE, 0)) > 0)
+	while ((n = recv(work_fd, buf, MAX_SIZE, 0)) > 0)
 	{
 		printf("%s", buf);
 		bzero(buf, sizeof(buf));
 	}
 
-	if(n < 0)
+	if (n < 0)
 	{
 		perror("error");
 	}
@@ -339,26 +339,26 @@ int client_pwd(int work_fd)
 	bzero(buf, sizeof(buf));
 	//等待服务器启动的信息
 
-	if((n = recv(sock_fd, &temp, sizeof(temp), 0)) < 0)
+	if ((n = recv(sock_fd, &temp, sizeof(temp), 0)) < 0)
 	{
 		perror("client: error reading message from server\n");
 		exit(1);
 	}
 
 	//接收服务器传来的信息
-	while((n = recv(work_fd, buf, MAX_SIZE, 0)) > 0)
+	while ((n = recv(work_fd, buf, MAX_SIZE, 0)) > 0)
 	{
 		printf("%s\n", buf);
 		bzero(buf, sizeof(buf));
 	}
 
-	if(n < 0)
+	if (n < 0)
 	{
 		perror("error");
 	}
 
 	//等待服务器完成的消息
-	if(n = recv(sock_fd, &temp, sizeof(temp), 0) < 0)
+	if (n = recv(sock_fd, &temp, sizeof(temp), 0) < 0)
 	{
 		perror("client:error reading message from server\n");
 		exit(1);
@@ -376,26 +376,26 @@ int client_mkdir(int work_fd, char *dir_name)
 	bzero(buf, sizeof(buf));
 	//等待服务器启动的信息
 
-	if((n = recv(sock_fd, &temp, sizeof(temp), 0)) < 0)
+	if ((n = recv(sock_fd, &temp, sizeof(temp), 0)) < 0)
 	{
 		perror("client: error reading message from server\n");
 		exit(1);
 	}
 
 	//发送文件夹名
-	if(send(work_fd, dir_name, (int)strlen(dir_name), 0) < 0)
+	if (send(work_fd, dir_name, (int)strlen(dir_name), 0) < 0)
 	{
 		perror("client: error sending dir_name from server\n");
 		exit(1);
 	}
 
 	//等待服务器完成的消息
-	if(recv(sock_fd, &success, sizeof(success), 0) < 0)
+	if (recv(sock_fd, &success, sizeof(success), 0) < 0)
 	{
 		perror("client: error reading message from server\n");
 		exit(1);
 	}
-	if(ntohl(success) == SERVER_READY)
+	if (ntohl(success) == SERVER_READY)
 		printf("%s creation succeed\n", dir_name);
 	else
 		printf("%s creation failed\n", dir_name);
@@ -412,34 +412,34 @@ int client_cd(int work_fd, char *path_name)
 	bzero(buf, sizeof(buf));
 	//等待服务器启动的信息
 
-	if(!strcmp(path_name,"\0"))
+	if (!strcmp(path_name, "\0"))
 		strcpy(path_name, "/user_dir");
 
-	if((n = recv(sock_fd, &temp, sizeof(temp), 0)) < 0)
+	if ((n = recv(sock_fd, &temp, sizeof(temp), 0)) < 0)
 	{
 		perror("client: error reading message from server\n");
 		exit(1);
 	}
 
 	//发送路径
-	if(send(work_fd, path_name, (int)strlen(path_name), 0) < 0)
+	if (send(work_fd, path_name, (int)strlen(path_name), 0) < 0)
 	{
 		perror("client: error sending path_name from server\n");
 		exit(1);
 	}
 
 	//等待服务器完成的消息
-	if(recv(sock_fd, &success, sizeof(success), 0)<0)
+	if (recv(sock_fd, &success, sizeof(success), 0) < 0)
 	{
 		perror("client: error reading message from server\n");
 		exit(1);
 	}
 
-	if(ntohl(success) == SERVER_READY)
+	if (ntohl(success) == SERVER_READY)
 		printf("change to %s succeed\n", path_name);
-    else if(ntohl(success) == PATH_OUT)
+	else if (ntohl(success) == PATH_OUT)
 		printf("already in the root dir!\n");
-	else if(ntohl(success) == 0)
+	else if (ntohl(success) == 0)
 		printf("path:%s not exist\n", path_name);
 	else
 		printf("change to %s failed\n", path_name);
@@ -456,32 +456,33 @@ int client_delete(int work_fd, char *file_name)
 	bzero(buf, sizeof(buf));
 	//等待服务器启动的信息
 
-	if((n = recv(sock_fd, &temp, sizeof(temp), 0)) < 0)
+	if ((n = recv(sock_fd, &temp, sizeof(temp), 0)) < 0)
 	{
 		perror("client: error reading message from server\n");
 		exit(1);
 	}
 
 	//发送文件名
-	if(send(work_fd, file_name, (int)strlen(file_name), 0) < 0)
+	if (send(work_fd, file_name, (int)strlen(file_name), 0) < 0)
 	{
 		perror("client: error sending file_name from server\n");
 		exit(1);
 	}
 
 	//等待服务器完成的消息
-	if(recv(sock_fd, &success, sizeof(success), 0)<0)
+	if (recv(sock_fd, &success, sizeof(success), 0) < 0)
 	{
 		perror("client: error reading message from server\n");
 		exit(1);
 	}
-	if(ntohl(success) == SERVER_READY)
+	if (ntohl(success) == SERVER_READY)
 		printf("delete %s succeed\n", file_name);
-	else if(ntohl(success) == 0)
+	else if (ntohl(success) == 0)
 		printf("file:%s not exist\n", file_name);
-	else if(ntohl(success) == IS_DT_DIR)
+	else if (ntohl(success) == IS_DT_DIR)
 		printf("you can't delete a dictory\n");
-	else if(ntohl(success)==OUT_OF_AUTHORITY){
+	else if (ntohl(success) == OUT_OF_AUTHORITY)
+	{
 		printf("you have no right to delete file:%s\n", file_name);
 	}
 	else
@@ -499,7 +500,7 @@ int client_send_cmd(char *arg, char *code)
 
 	//发送命令字符串到服务器
 	rc = send(sock_fd, buf, sizeof(buf), 0);
-	if(rc < 0)
+	if (rc < 0)
 	{
 		perror("Error sending command to server");
 		exit(1);
@@ -510,16 +511,17 @@ int client_send_cmd(char *arg, char *code)
 void client_login()
 {
 	char arg[100], code[5], user[100], pass[20];
-	int wait,ret_code;
+	int wait, ret_code;
 	bzero(arg, sizeof(arg));
 	bzero(code, sizeof(code));
 	bzero(user, sizeof(user));
-	while(1){
+	while (1)
+	{
 		//获取用户名
 		printf("NAME: ");
 		fflush(stdout);
 		fflush(stdin);
-		scanf("%s",user);
+		scanf("%s", user);
 
 		//发送用户名到服务器
 		strcpy(code, "USER");
@@ -542,112 +544,135 @@ void client_login()
 
 		//等待响应
 		ret_code = get_return_code(sock_fd);
-		if(ret_code==LOGIN_SUCCESS){
+		if (ret_code == LOGIN_SUCCESS)
+		{
 			printf("Login succeed!\n");
 			break;
 		}
-		else if(ret_code==LOGIN_FAILED){
+		else if (ret_code == LOGIN_FAILED)
+		{
 			printf("invalid username/password. Please try again!\n");
 			send(sock_fd, "LOGIN", (int)strlen("LOGIN"), 0);
 			continue;
 		}
-		else{
+		else
+		{
 			perror("Error reading message from server");
 			exit(1);
 			break;
 		}
 	}
-
 }
 
-void client_register() {
+void client_register()
+{
 	int i, j;
 	char accountName[20], accountPassword[20], accountPasswordCheck[20], pass[20];
 	int ret_code;
 	int check = 0;
-	while (1) {
+	while (1)
+	{
 		printf("Please enter your name for the system less than 20 bytes:\n");
 		printf("NAME: ");
 		scanf("%s", accountName);
-		if (strlen(accountName) > 20) {
+		if (strlen(accountName) > 20)
+		{
 			printf("Illegal input!");
 			continue;
 		}
-		else {
+		else
+		{
 			client_send_cmd(accountName, "USER");
-			ret_code=get_return_code(sock_fd);
-			if(ret_code==REGIST_NAME_REPEAT){
+			ret_code = get_return_code(sock_fd);
+			if (ret_code == REGIST_NAME_REPEAT)
+			{
 				printf("Your name has existed! Please change one!\n");
 				send(sock_fd, "REGISTER", (int)strlen("REGISTER"), 0);
 				continue;
 			}
-			if(ret_code==REGIST_NAME_OK){
+			if (ret_code == REGIST_NAME_OK)
+			{
 				break;
 			}
 		}
 	}
 	printf("Your application has been sent, wait a moment for manager to check！\n");
 	ret_code = get_return_code(sock_fd);
-	if (ret_code==REGIST_APPLICATION_OK) {
+	if (ret_code == REGIST_APPLICATION_OK)
+	{
 		printf("Your application has passed！ \n");
 	}
-	else if(ret_code==REGIST_REFUSED) {
+	else if (ret_code == REGIST_REFUSED)
+	{
 		printf("Your application has been refused!Please quit the system!\n");
 		exit(1);
 		system("pause");
 		return;
 	}
-	else{
+	else
+	{
 		printf("system wrong!");
 		exit(1);
 		return;
 	}
-	while (1) {
-		accountPassword[0]='\0';
+	while (1)
+	{
+		accountPassword[0] = '\0';
 		printf("Please enter your password less than 20 bytes.\n");
-		//fflush(stdout);
+		// fflush(stdout);
 		printf("Password:");
 		scanf("%s", pass);
-		strcat(accountPassword,pass);
-		if (strlen(accountPassword) > 20) {
+		strcat(accountPassword, pass);
+		if (strlen(accountPassword) > 20)
+		{
 			printf("Illegal input！\n");
 		}
-		else break;
+		else
+			break;
 	}
-	while (1) {
-		accountPasswordCheck[0]='\0';
-		//fflush(stdout);
+	while (1)
+	{
+		accountPasswordCheck[0] = '\0';
+		// fflush(stdout);
 		bzero(pass, sizeof(pass));
 		printf("Please re-enter your password:");
 		scanf("%s", pass);
-		strcat(accountPasswordCheck,pass);
-		for (i = 0, j = 0;;i++,j++) {
-			if (i == strlen(accountPassword) && j == strlen(accountPasswordCheck)) {
+		strcat(accountPasswordCheck, pass);
+		for (i = 0, j = 0;; i++, j++)
+		{
+			if (i == strlen(accountPassword) && j == strlen(accountPasswordCheck))
+			{
 				check = 1;
 				break;
 			}
-			else if (accountPassword[i] == accountPasswordCheck[j]) {
+			else if (accountPassword[i] == accountPasswordCheck[j])
+			{
 				continue;
 			}
-			else {
+			else
+			{
 				check = 0;
 				break;
 			}
 		}
-		if (check==0) {
+		if (check == 0)
+		{
 			printf("Your password entered is different from the last time！\n");
 		}
-		else break;
+		else
+			break;
 	}
 	client_send_cmd(accountPassword, "PASS");
-	ret_code=get_return_code(sock_fd);
-	if (ret_code==REGIST_SUCCESS) {
+	ret_code = get_return_code(sock_fd);
+	if (ret_code == REGIST_SUCCESS)
+	{
 		printf("Register successfully！ Please login!\n");
 		send(sock_fd, "LOGIN", (int)strlen("LOGIN"), 0);
 		client_login();
 		return;
 	}
-	else{
+	else
+	{
 		printf("system wrong!");
 		exit(1);
 		return;

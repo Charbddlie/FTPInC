@@ -167,15 +167,42 @@ int file_name_valid(char *arg, int size)
 	return 1;
 }
 
-int send_file(int work_fd, int sock_fd, char *filepath, char* file_name)
+int send_file(int work_fd, int sock_fd, char *filepath, char *file_name)
 {
-	if (!file_name_valid(file_name,sizeof(file_name))){
+	if (!file_name_valid(file_name, sizeof(file_name)))
+	{
 		printf("文件名不能包含路径(斜杠)\n");
 		send_num(sock_fd, PATH_FAIL);
 		return 0;
 	}
 	// printf("正在发送文件：%s\n", filepath);
-	FILE *file = fopen(filepath, "r");
+
+	//获取文件后缀名
+	int index = -1;
+	for (int i = 0; i < sizeof(file_name); i++)
+	{
+		if (file_name[i] == '.')
+			index = i;
+	}
+	char extern_name[MAX_SIZE];
+	strcpy(extern_name, file_name + index);
+
+	// 两种不同打开方式，对应ascii和二进制两种传输方式
+	FILE *file = NULL;
+	printf("%s\n", extern_name);
+	if (strcmp(extern_name, ".txt") == 0)
+	{
+		file = fopen(filepath, "r");
+		// debug
+		printf("ascii方式打开\n");
+	}
+	else
+	{
+		file = fopen(filepath, "rb");
+		// debug
+		printf("二进制方式打开\n");
+	}
+
 	if (file == NULL)
 	{
 		// debug
@@ -199,15 +226,15 @@ int send_file(int work_fd, int sock_fd, char *filepath, char* file_name)
 		perror("fstat error");
 		send_num(sock_fd, -1);
 		return 0;
-	} else{
+	}
+	else
+	{
 		send_num(sock_fd, s.st_size / MAX_SIZE + 1);
 	}
 	close(fd);
 	// printf("服务器get_num: %ld\n", (s.st_size / MAX_SIZE + 1));
 	// debug
 	printf("st_size: %ld", s.st_size);
-
-	
 
 	//正式开始传输
 	char buf[MAX_SIZE];
@@ -233,20 +260,22 @@ int get_file(int work_fd, int sock_fd, char *filepath)
 	{
 		printf("获取文件失败\n");
 		return 0;
-	} else if (code == PATH_FAIL)
+	}
+	else if (code == PATH_FAIL)
 	{
 		printf("文件名不能包含路径(斜杠)\n");
 		return 0;
 	}
 
 	int get_num = get_return_code(sock_fd); //文件传输次数
-	if(get_num < 0){
+	if (get_num < 0)
+	{
 		printf("获取文件传输次数失败\n");
 		return 0;
 	}
 
-	//debug
-	// printf("接收到文件传输总次数:%d\n", get_num);
+	// debug
+	//  printf("接收到文件传输总次数:%d\n", get_num);
 	FILE *file = fopen(filepath, "w");
 	int size;
 	char data[MAX_SIZE];

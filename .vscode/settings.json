@@ -2,7 +2,8 @@
     "files.associations": {
         "errno.h": "c",
         "ctype.h": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "in.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

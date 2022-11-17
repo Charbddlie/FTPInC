@@ -1,8 +1,8 @@
 /*************************************************************************
-    > File Name: server.c
-    > Author: Ukey
-    > Mail: gsl110809@gmail.com
-    > Created Time: 2017年05月25日 星期四 14时54分01秒
+	> File Name: server.c
+	> Author: Ukey
+	> Mail: gsl110809@gmail.com
+	> Created Time: 2017年05月25日 星期四 14时54分01秒
  ************************************************************************/
 
 #include "server.h"
@@ -149,43 +149,53 @@ void work_process(int sock_fd)
 	}
 }
 
-int server_check(char* username, char* password) {
-	FILE* file = fopen("../.passwd", "r");
+int server_check(char *username, char *password)
+{
+	FILE *file = fopen("../.passwd", "r");
 	int i, j;
 	int result;
-	if (!file) {
+	if (!file)
+	{
 		printf("文件打开失败！");
 		exit(1);
 	}
 	char temp[50];
 	char name[20];
-	while (1) {
-		if (feof(file)) {
+	while (1)
+	{
+		if (feof(file))
+		{
 			result = 0;
 			break;
 		}
 		i = 0;
 		j = 0;
 		fgets(temp, 49, file);
-		while (temp[i] != ',') {
+		while (temp[i] != ',')
+		{
 			name[i] = temp[i];
 			i++;
 		}
 		name[i] = '\0';
-		if (strcmp(name, username) != 0) {
+		if (strcmp(name, username) != 0)
+		{
 			continue;
 		}
-		else {
+		else
+		{
 			char userpassword[20];
-			for(i += 1; temp[i] != ','; j++,i++) {
+			for (i += 1; temp[i] != ','; j++, i++)
+			{
 				userpassword[j] = temp[i];
 			}
 			userpassword[j] = '\0';
-			if (strcmp(userpassword, password) != 0) {
+			if (strcmp(userpassword, password) != 0)
+			{
 				result = 0;
 				break;
 			}
-			else {
+			else
+			{
 				result = 1;
 				break;
 			}
@@ -193,22 +203,25 @@ int server_check(char* username, char* password) {
 	}
 	fclose(file);
 	return result;
-}	
+}
 
-void file_write(int sock_fd,char *accountName ,char* au){
-	FILE* file = fopen("../.passwd", "a");
+void file_write(int sock_fd, char *accountName, char *au)
+{
+	FILE *file = fopen("../.passwd", "a");
 	char buf[MAX_SIZE];
-	if (!file) {
+	if (!file)
+	{
 		printf("File open failed\n");
 		exit(-1);
 	}
 	char accountPassword[20];
 	bzero(buf, sizeof(buf));
 	recv_data(sock_fd, buf, sizeof(buf));
-	int i=5;
-	int j=0;
-	while(buf[i]&&buf[i]!='\0'){
-		accountPassword[j++]=buf[i++];
+	int i = 5;
+	int j = 0;
+	while (buf[i] && buf[i] != '\0')
+	{
+		accountPassword[j++] = buf[i++];
 	}
 	char line[50];
 	line[0] = '\0';
@@ -223,98 +236,119 @@ void file_write(int sock_fd,char *accountName ,char* au){
 	return;
 }
 
-int manager_check(int sock_fd,char* accountName,char *au){
+int manager_check(int sock_fd, char *accountName, char *au)
+{
 	char getAnswer[5];
 	printf("A user named %s just sent a register application!\n", accountName);
-	while (1) {
+	while (1)
+	{
 		printf("Agree please press 'y' or 'Y'，or press 'N' or 'n' to refuse:");
 		scanf("%s", getAnswer);
-		if (getAnswer[0] == 'y' || getAnswer[0] == 'Y') {
+		if (getAnswer[0] == 'y' || getAnswer[0] == 'Y')
+		{
 			printf("Please set permissions for this user：1（can only upload）、2（upload & download）、3（upload & download & change directory）\n");
-			while (1) {
+			while (1)
+			{
 				printf("Please enter number（1、2、3）：");
 				scanf("%s", getAnswer);
-				if (getAnswer[0] == '1' || getAnswer[0] == '2' || getAnswer[0] == '3') {
-					au[0]='\0';
-					switch(getAnswer[0]){
-						case '3':
-							strcat(au,"HIGH");
-							break;
-						case '2':
-							strcat(au,"MID");
-							break;
-						case '1':
-							strcat(au,"LOW");
-							break;
+				if (getAnswer[0] == '1' || getAnswer[0] == '2' || getAnswer[0] == '3')
+				{
+					au[0] = '\0';
+					switch (getAnswer[0])
+					{
+					case '3':
+						strcat(au, "HIGH");
+						break;
+					case '2':
+						strcat(au, "MID");
+						break;
+					case '1':
+						strcat(au, "LOW");
+						break;
 					}
 					break;
 				}
-				else {
+				else
+				{
 					printf("Illegal input!\n");
 				}
 			}
 			send_num(sock_fd, REGIST_APPLICATION_OK);
 			return 1;
 		}
-		if (getAnswer[0] == 'n' || getAnswer[0] == 'N') {
+		if (getAnswer[0] == 'n' || getAnswer[0] == 'N')
+		{
 			return 0;
 		}
-		else {
+		else
+		{
 			printf("Illegal input!\n");
 		}
 	}
 }
 
-int server_register(int sock_fd){
-	int i,ret,result,flag,j;
+int server_register(int sock_fd)
+{
+	int i, ret, result, flag, j;
 	char temp[60];
 	char name[20];
 	char accountName[20];
-	FILE* file = fopen("../.passwd", "r");
-	if (!file) {
+	FILE *file = fopen("../.passwd", "r");
+	if (!file)
+	{
 		printf("文件打开失败！");
 		exit(1);
 	}
 	char buf[MAX_SIZE];
 	bzero(buf, sizeof(buf));
 	recv(sock_fd, buf, sizeof(buf), 0);
-	i=5;
-	j=0;
-	while(buf[i]){
-		accountName[j++]=buf[i++];
+	i = 5;
+	j = 0;
+	while (buf[i])
+	{
+		accountName[j++] = buf[i++];
 	}
-	accountName[j]='\0';
-	while(1){
-		if (feof(file)) {
+	accountName[j] = '\0';
+	while (1)
+	{
+		if (feof(file))
+		{
 			result = 1;
 			break;
 		}
 		i = 0;
 		fgets(temp, 59, file);
-		while (temp[i] != ',') {
+		while (temp[i] != ',')
+		{
 			name[i] = temp[i];
 			i++;
 		}
 		// WORK_PORT = '\0';
-		if (strcmp(name, accountName) != 0) {
+		if (strcmp(name, accountName) != 0)
+		{
 			continue;
 		}
-		else {
+		else
+		{
 			result = 0;
 			break;
 		}
 	}
 	fclose(file);
-	if(result==0){
+	if (result == 0)
+	{
 		return REGIST_NAME_REPEAT;
 	}
-	if(result==1){
+	if (result == 1)
+	{
 		send_num(sock_fd, REGIST_NAME_OK);
 		char au[5];
-		ret=manager_check(sock_fd,accountName,au);
-		if(ret==0) return 0;
-		else {
-			file_write(sock_fd,accountName,au);
+		ret = manager_check(sock_fd, accountName, au);
+		if (ret == 0)
+			return 0;
+		else
+		{
+			file_write(sock_fd, accountName, au);
 			return 1;
 		}
 	}
@@ -326,18 +360,18 @@ int server_login(int sock_fd)
 	char buf[MAX_SIZE];
 	char user[MAX_SIZE];
 	char passwd[MAX_SIZE];
-	bzero(buf, sizeof(buf));//数组清零
+	bzero(buf, sizeof(buf)); //数组清零
 	bzero(user, sizeof(user));
 	bzero(passwd, sizeof(passwd));
 
 	//获取客户端传来的用户名
-	if((ret = recv_data(sock_fd, buf, sizeof(buf))) < 0)
+	if ((ret = recv_data(sock_fd, buf, sizeof(buf))) < 0)
 	{
 		perror("recv user error:");
 		exit(1);
 	}
 	int n = 0, i = 5;
-	while(buf[i])
+	while (buf[i])
 	{
 		user[n++] = buf[i++];
 	}
@@ -346,7 +380,7 @@ int server_login(int sock_fd)
 
 	//获取客户端传来的密码
 	bzero(buf, sizeof(buf));
-	if((ret = (recv_data(sock_fd, buf, sizeof(buf)))) < 0)
+	if ((ret = (recv_data(sock_fd, buf, sizeof(buf)))) < 0)
 	{
 		perror("recv passwd error:");
 		exit(1);
@@ -354,7 +388,7 @@ int server_login(int sock_fd)
 
 	i = 5;
 	n = 0;
-	while(buf[i])
+	while (buf[i])
 	{
 		passwd[n++] = buf[i++];
 	}
@@ -370,7 +404,7 @@ int server_get_request(int sock_fd, char *cmd, char *arg)
 	bzero(buf, sizeof(buf));
 
 	//接收客户端命令
-	if((recv_data(sock_fd, buf, sizeof(buf))) == -1)
+	if ((recv_data(sock_fd, buf, sizeof(buf))) == -1)
 	{
 		perror("recv error");
 		exit(1);
@@ -383,7 +417,7 @@ int server_get_request(int sock_fd, char *cmd, char *arg)
 	// strcpy(arg, temp);
 	get_cmd_first_arg(buf, cmd, arg);
 
-	if(strcmp(cmd, "QUIT") == 0)
+	if (strcmp(cmd, "QUIT") == 0)
 	{
 		ret_code = QUIT_SUCESS;
 	}
@@ -405,7 +439,7 @@ int server_work_conn(int sock_fd)
 	char buf[MAX_SIZE];
 	int wait, work_fd;
 
-	if(recv(sock_fd, &wait, sizeof(wait), 0) < 0)
+	if (recv(sock_fd, &wait, sizeof(wait), 0) < 0)
 	{
 		perror("error while wait");
 		exit(1);
@@ -413,11 +447,11 @@ int server_work_conn(int sock_fd)
 
 	struct sockaddr_in client_addr;
 	socklen_t len = sizeof(client_addr);
-	getpeername(sock_fd, (struct sockaddr*)&client_addr, &len);
+	getpeername(sock_fd, (struct sockaddr *)&client_addr, &len);
 	inet_ntop(AF_INET, &client_addr.sin_addr, buf, sizeof(buf));
 
 	//创建到客户端的数据连接
-	if((work_fd = connect_server(DATA_PORT, buf)) < 0)
+	if ((work_fd = connect_server(DATA_PORT, buf)) < 0)
 	{
 		exit(1);
 	}
@@ -433,13 +467,13 @@ int server_cmd_ls(int work_fd, int sock_fd)
 	//数组初始置0，否则可能会有奇怪的数据！
 	bzero(dir, sizeof(dir));
 
-	struct dirent* file;
+	struct dirent *file;
 	strcat(dir, "..");
 	strcat(dir, current_dir);
 	strcat(dir, "/");
 
-	DIR* direc = opendir(dir);
-	if(direc == NULL)
+	DIR *direc = opendir(dir);
+	if (direc == NULL)
 	{
 		perror("open dir error");
 		exit(1);
@@ -447,24 +481,26 @@ int server_cmd_ls(int work_fd, int sock_fd)
 	int n = 0;
 	bzero(data, sizeof(data));
 	char type[100];
-	while((file = readdir(direc)) != NULL)
+	while ((file = readdir(direc)) != NULL)
 	{
-		if(file->d_type==DT_DIR){
-		    type[0]='\0';
-			strcat(type,"\033[1;34;49m");
-			strcat(type,file->d_name);
-			strcat(type,"\033[0m");
+		if (file->d_type == DT_DIR)
+		{
+			type[0] = '\0';
+			strcat(type, "\033[1;34;49m");
+			strcat(type, file->d_name);
+			strcat(type, "\033[0m");
 			sprintf(data + n, "%s\n", type);
-		    n += strlen(type) + 1;
+			n += strlen(type) + 1;
 		}
-		else{
+		else
+		{
 			sprintf(data + n, "%s\n", file->d_name);
 			n += strlen(file->d_name) + 1;
 		}
 	}
 	data[n] = '\0';
 	closedir(direc);
-	if(send(work_fd, data, strlen(data), 0) < 0)
+	if (send(work_fd, data, strlen(data), 0) < 0)
 	{
 		perror("send error");
 	}
@@ -479,7 +515,7 @@ int server_cmd_pwd(int work_fd, int sock_fd)
 	char data[MAX_SIZE];
 	bzero(data, sizeof(data));
 	strcpy(data, current_dir);
-	if(send(work_fd, data, strlen(data), 0) < 0)
+	if (send(work_fd, data, strlen(data), 0) < 0)
 	{
 		perror("send error");
 	}
@@ -499,17 +535,17 @@ int server_cmd_mkdir(int work_fd, int sock_fd)
 	strcat(new_dir, current_dir);
 	strcat(new_dir, "/");
 
-	if(recv(work_fd, get_dir, MAX_SIZE, 0) > 0)
+	if (recv(work_fd, get_dir, MAX_SIZE, 0) > 0)
 	{
 		strcat(new_dir, get_dir);
-		int isCreate = mkdir(new_dir,0775);
-   		if(!isCreate)
-   		{
-			printf("create path:%s\n",new_dir);
+		int isCreate = mkdir(new_dir, 0775);
+		if (!isCreate)
+		{
+			printf("create path:%s\n", new_dir);
 			send_num(sock_fd, SERVER_READY);
 		}
-   		else
-   		{
+		else
+		{
 			printf("create path:%s failed! error code : %d \n", new_dir, isCreate);
 			send_num(sock_fd, 0);
 		}
@@ -528,32 +564,41 @@ int server_cmd_cd(int work_fd, int sock_fd)
 	bzero(new_path, sizeof(new_path));
 	bzero(get_path, sizeof(get_path));
 
-	if(recv(work_fd, get_path, MAX_SIZE, 0) > 0)
+	if (recv(work_fd, get_path, MAX_SIZE, 0) > 0)
 	{
-		if(get_path[0] == '~'||(strlen(get_path)==1&&get_path[0] == '/'))
+		if (get_path[0] == '~' || (strlen(get_path) == 1 && get_path[0] == '/'))
 		{
-			if(strlen(get_path)!=1){
+			if (strlen(get_path) != 1)
+			{
 				send_num(sock_fd, 0);
 			}
-			else{
-				current_dir[0]='\0';
+			else
+			{
+				current_dir[0] = '\0';
 				strcat(current_dir, "/user_dir");
 				send_num(sock_fd, SERVER_READY);
 			}
 		}
-		else if(get_path[0] == '.'&& get_path[1] == '.'){
-			if(strlen(get_path)!=2){
+		else if (get_path[0] == '.' && get_path[1] == '.')
+		{
+			if (strlen(get_path) != 2)
+			{
 				send_num(sock_fd, 0);
 			}
-			else{
-				for(int l=strlen(current_dir)-1;l>=0;l--){
-					if(current_dir[l]=='/'){
-						if(l==0){
+			else
+			{
+				for (int l = strlen(current_dir) - 1; l >= 0; l--)
+				{
+					if (current_dir[l] == '/')
+					{
+						if (l == 0)
+						{
 							send_num(sock_fd, PATH_OUT);
 							return 0;
 						}
-						else{
-							current_dir[l]='\0';
+						else
+						{
+							current_dir[l] = '\0';
 							send_num(sock_fd, SERVER_READY);
 						}
 						break;
@@ -561,13 +606,13 @@ int server_cmd_cd(int work_fd, int sock_fd)
 				}
 			}
 		}
-		else if(get_path[0] == '/')
+		else if (get_path[0] == '/')
 		{
 			strcat(new_path, "..");
 			strcat(new_path, get_path);
 			if (!access(new_path, 0))
 			{
-				current_dir[0]='\0';
+				current_dir[0] = '\0';
 				strcat(current_dir, get_path);
 				printf("change path to:%s\n", current_dir);
 				send_num(sock_fd, SERVER_READY);
@@ -575,7 +620,8 @@ int server_cmd_cd(int work_fd, int sock_fd)
 			else
 				send_num(sock_fd, 0);
 		}
-		else{
+		else
+		{
 			strcat(new_path, "..");
 			strcat(new_path, current_dir);
 			strcat(new_path, "/");
@@ -603,30 +649,35 @@ int server_cmd_delete(int work_fd, int sock_fd)
 	char file_name[MAX_SIZE];
 	bzero(delete_path, sizeof(delete_path));
 	bzero(file_name, sizeof(file_name));
-	if(recv(work_fd, file_name, MAX_SIZE, 0) > 0)
+	if (recv(work_fd, file_name, MAX_SIZE, 0) > 0)
 	{
-		if(!strcmp(file_name,"..")||!strcmp(file_name,".")){
+		if (!strcmp(file_name, "..") || !strcmp(file_name, "."))
+		{
 			send_num(sock_fd, OUT_OF_AUTHORITY);
 			return 0;
 		}
-		struct dirent* file;
+		struct dirent *file;
 		strcat(delete_path, "..");
 		strcat(delete_path, current_dir);
 		strcat(delete_path, "/");
-		DIR* direc = opendir(delete_path);
-		if(direc == NULL)
+		DIR *direc = opendir(delete_path);
+		if (direc == NULL)
 		{
 			perror("open dir error");
 			exit(1);
 		}
-		while((file = readdir(direc)) != NULL){
-			if(!strcmp(file->d_name,file_name)){
-				if(file->d_type==DT_DIR){
+		while ((file = readdir(direc)) != NULL)
+		{
+			if (!strcmp(file->d_name, file_name))
+			{
+				if (file->d_type == DT_DIR)
+				{
 					send_num(sock_fd, IS_DT_DIR);
 					return 0;
 				}
-				else{
-					strcat(delete_path,file_name);
+				else
+				{
+					strcat(delete_path, file_name);
 					remove(delete_path);
 					printf("delete %s\n", delete_path);
 					send_num(sock_fd, SERVER_READY);
@@ -654,11 +705,11 @@ void server_cmd_get(int work_fd, int sock_fd, char *file_name)
 
 	send_file(work_fd, sock_fd, filepath, file_name);
 
-	//debug++++++++++++++++++++++==
-	// printf("cur_dir: %s\n", current_dir);
-	// printf("file_name: %s\n", file_name);
-	// exit(0);
-	//debug+++++++++++++++++++++++++
+	// debug++++++++++++++++++++++==
+	//  printf("cur_dir: %s\n", current_dir);
+	//  printf("file_name: %s\n", file_name);
+	//  exit(0);
+	// debug+++++++++++++++++++++++++
 
 	send_num(sock_fd, RET_SUCCESS);
 }
