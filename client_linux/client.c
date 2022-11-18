@@ -1,10 +1,3 @@
-/*************************************************************************
-  > File Name: client.c
-  > Author: Ukey
-  > Mail: gsl110809@gmail.com
-  > Created Time: 2017年05月25日 星期四 19时49分35秒
- ************************************************************************/
-
 #include "client.h"
 int sock_fd;
 
@@ -13,17 +6,8 @@ int main(int argc, char *argv[])
 	int work_fd, ret_code, s;
 	char buf[MAX_SIZE], port[10], arg[100], code[5];
 	struct addrinfo hints, *result, *rp;
-
-	// debug
 	char host[] = "localhost";
 
-	// if (argc != 2)
-	// {
-	// 	printf("Please input client hostname\n");
-	// 	exit(1);
-	// }
-
-	// char *host = argv[1];
 
 	//获取与主机名匹配的地址
 	bzero(&hints, sizeof(struct addrinfo));
@@ -91,10 +75,6 @@ int main(int argc, char *argv[])
 			printf("invalid command\n");
 			continue;
 		}
-		// debug
-		//  printf("\n\nbuf: %s\n", buf);
-		//  printf("cmd: %s  arg: %s", code, arg);
-
 		//发送命令到服务器
 		if (send(sock_fd, buf, (int)strlen(buf), 0) < 0)
 		{
@@ -187,17 +167,7 @@ int client_read_command(char *buf, int size, char *arg, char *code)
 	fflush(stdout);
 	setbuf(stdin, NULL);
 	read_input(buf, size);
-	// debug
-	// printf("buf: %s", buf);
 
-	// char *temp_arg = NULL;
-	// temp_arg = strtok(buf, " ");
-	// temp_arg = strtok(NULL, " ");
-
-	// if(temp_arg != NULL)
-	// {
-	// 	strncpy(arg, temp_arg, strlen(temp_arg) + 1);
-	// }
 	get_cmd_first_arg(buf, code, arg);
 
 	if (strcmp(code, "ls") == 0 || strcmp(code, "LS") == 0)
@@ -247,8 +217,6 @@ int client_read_command(char *buf, int size, char *arg, char *code)
 	strcpy(buf, code);
 	strcat(buf, " ");
 	strncat(buf, arg, strlen(arg) + 1);
-	// debug
-	// printf("%s", buf);
 
 	return 0;
 }

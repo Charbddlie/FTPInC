@@ -204,6 +204,7 @@ int send_file(int work_fd, int sock_fd, char *filepath, char *file_name)
 	if (fstat(fd, &s) < 0)
 	{
 		perror("fstat error");
+		printf("Dirctory can not be transfered!\n");
 		send_num(sock_fd, -1);
 		return 0;
 	}
@@ -246,7 +247,7 @@ int get_file(int work_fd, int sock_fd, char *filepath)
 	int get_num = get_return_code(sock_fd); //文件传输次数
 	if (get_num < 0)
 	{
-		printf("Failed to receive times needed for file transfer\n");
+		printf("Dirctory can not be transfered!\n");
 		return 0;
 	}
 	FILE *file = fopen(filepath, "w");
