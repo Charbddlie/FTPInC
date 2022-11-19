@@ -197,14 +197,10 @@ int client_read_command(char *buf, int size, char *arg, char *code)
 	else if (strcmp(code, "get") == 0)
 	{
 		strcpy(code, "GET");
-		//if (!file_name_valid(arg, sizeof(arg)))
-		//	return -1;
 	}
 	else if (strcmp(code, "put") == 0)
 	{
 		strcpy(code, "PUT");
-		//if (!file_name_valid(arg, sizeof(arg)))
-		//	return -1;
 	}
 	else if (strcmp(code, "quit") == 0)
 	{
@@ -212,12 +208,10 @@ int client_read_command(char *buf, int size, char *arg, char *code)
 	}
 	else
 		return -1;
-
 	bzero(buf, sizeof(buf));
 	strcpy(buf, code);
 	strcat(buf, " ");
 	strncat(buf, arg, strlen(arg) + 1);
-
 	return 0;
 }
 
@@ -480,7 +474,7 @@ int client_send_cmd(char *arg, char *code)
 
 void client_login()
 {
-	char arg[100], code[5], user[100], pass[20];
+	char arg[MAX_SIZE], code[MAX_SIZE], user[MAX_SIZE], pass[MAX_SIZE];
 	int wait, ret_code;
 	bzero(arg, sizeof(arg));
 	bzero(code, sizeof(code));
@@ -537,9 +531,8 @@ void client_login()
 void client_register()
 {
 	int i, j;
-	char accountName[20], accountPassword[20], accountPasswordCheck[20], pass[20];
+	char accountName[MAX_SIZE], accountPassword[MAX_SIZE], accountPasswordCheck[MAX_SIZE], pass[MAX_SIZE];
 	int ret_code;
-	int check = 0;
 	while (1)
 	{
 		printf("Please enter your name for the system less than 20 bytes:\n");
@@ -585,8 +578,12 @@ void client_register()
 		exit(1);
 		return;
 	}
+	fflush(stdout);
+	fflush(stdin);
+	bzero(pass, sizeof(pass));
 	while (1)
 	{
+		bzero(accountPassword, sizeof(accountPassword));
 		accountPassword[0] = '\0';
 		printf("Please enter your password less than 20 bytes.\n");
 		// fflush(stdout);
@@ -602,35 +599,17 @@ void client_register()
 	}
 	while (1)
 	{
+		bzero(accountPasswordCheck, sizeof(accountPasswordCheck));
 		accountPasswordCheck[0] = '\0';
 		// fflush(stdout);
 		bzero(pass, sizeof(pass));
 		printf("Please re-enter your password:");
 		scanf("%s", pass);
 		strcat(accountPasswordCheck, pass);
-		for (i = 0, j = 0;; i++, j++)
-		{
-			if (i == strlen(accountPassword) && j == strlen(accountPasswordCheck))
-			{
-				check = 1;
-				break;
-			}
-			else if (accountPassword[i] == accountPasswordCheck[j])
-			{
-				continue;
-			}
-			else
-			{
-				check = 0;
-				break;
-			}
-		}
-		if (check == 0)
-		{
+		if(strcmp(accountPasswordCheck,accountPassword)!=0){
 			printf("Your password entered is different from the last time！\n");
 		}
-		else
-			break;
+		else break;
 	}
 	client_send_cmd(accountPassword, "PASS");
 	ret_code = get_return_code(sock_fd);

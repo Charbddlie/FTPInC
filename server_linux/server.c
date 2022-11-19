@@ -93,7 +93,7 @@ void work_process(int sock_fd)
 	while (1)
 	{
 		//接收客户端的请求并解析
-		int ret_code = server_get_request(sock_fd, cmd, arg); //这个函数内部会返回给客户端对于指令的评价（是否可处理）
+		int ret_code = server_get_request(sock_fd, cmd, arg); 
 		if ((ret_code < 0) || (ret_code == QUIT_SUCESS))
 			break;
 		if (ret_code == CMD_SUCCESS)
@@ -219,6 +219,7 @@ void file_write(int sock_fd, char *accountName, char *au)
 	{
 		accountPassword[j++] = buf[i++];
 	}
+	accountPassword[j]='\0';
 	char line[50];
 	line[0] = '\0';
 	strcat(line, accountName);
@@ -234,7 +235,7 @@ void file_write(int sock_fd, char *accountName, char *au)
 
 int manager_check(int sock_fd, char *accountName, char *au)
 {
-	char getAnswer[5];
+	char getAnswer[MAX_SIZE];
 	printf("A user named %s just sent a register application!\n", accountName);
 	while (1)
 	{
@@ -286,9 +287,9 @@ int manager_check(int sock_fd, char *accountName, char *au)
 int server_register(int sock_fd)
 {
 	int i, ret, result, flag, j;
-	char temp[60];
-	char name[20];
-	char accountName[20];
+	char temp[MAX_SIZE];
+	char name[MAX_SIZE];
+	char accountName[MAX_SIZE];
 	FILE *file = fopen("../.passwd", "r");
 	if (!file)
 	{
@@ -338,7 +339,7 @@ int server_register(int sock_fd)
 	if (result == 1)
 	{
 		send_num(sock_fd, REGIST_NAME_OK);
-		char au[5];
+		char au[MAX_SIZE];
 		ret = manager_check(sock_fd, accountName, au);
 		if (ret == 0)
 			return 0;
@@ -684,10 +685,7 @@ int server_cmd_delete(int work_fd, int sock_fd)
 				}
 				else
 				{
-					strcat(delete_path, file_name);if(get_return_code(sock_fd)==RET_SUCCESS)//此处接收RET_SUCCESS
-	{
-		printf("File successfully sent!\n");
-	}
+					strcat(delete_path, file_name);
 					remove(delete_path);
 					printf("delete %s\n", delete_path);
 					send_num(sock_fd, SERVER_READY);
